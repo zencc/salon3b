@@ -659,8 +659,7 @@ window.addEventListener('error', e => {
     ['sehpa', 150, 160, 270, 220, 0], ['tvset', 101, 317, 401, 359, 2],
     ['table', 350, 95, 440, 255, 1],
     ['chair', 302, 122, 350, 170, 1], ['chair', 302, 182, 350, 230, 1],
-    ['chair', 371, 50, 419, 95, 0], ['chair', 371, 255, 419, 300, 2],
-    ['billy', 0, 0, 96.3, 96.3, 0]
+    ['chair', 371, 50, 419, 95, 0], ['chair', 371, 255, 419, 300, 2]
   ];
   const BEDROOM_DEFAULT = [
     ['karyola', -394, 318.5, -168, 493.5, 1], ['komodin', -394, 262.5, -348, 318.5, 1], ['komodin', -394, 493.5, -348, 549.5, 1],
@@ -710,12 +709,6 @@ window.addEventListener('error', e => {
 
   const furn = new THREE.Group(); scene.add(furn);
   let items = loadState();
-  try {
-    if (!localStorage.getItem('bohemia-billy-added') && !items.some(i => i.type === 'billy')) {
-      items.push({ id: nextId++, type: 'billy', x: 0.475, z: 0.475, r: 0 });
-    }
-    localStorage.setItem('bohemia-billy-added', '1');
-  } catch (e) { /* storage unavailable */ }
   addBedroomOnce(items, 'bohemia-bedroom-added');
   let selected = null;
 
