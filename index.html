@@ -1,0 +1,1184 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bohemia Salonu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: header with view switches, a toolbar for adding/rotating/removing pieces, the 3D stage where pieces are dragged, then the list of what is in the room. */
+:root {
+  --bg: #f1f1ee;
+  --surface: #ffffff;
+  --fg: #1d1e1c;
+  --muted: #62645f;
+  --line: #d9d9d3;
+  --accent: #a87745;
+  --accent-ink: #ffffff;
+  --danger: #c0392b;
+  --stage: #e4e4df;
+  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Inter", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #151614; --surface: #1e1f1c; --fg: #ecebe6; --muted: #a3a49d; --line: #34352f;
+    --accent: #d1a06b; --accent-ink: #1a1408; --danger: #ef7d6e; --stage: #24251f; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #151614; --surface: #1e1f1c; --fg: #ecebe6; --muted: #a3a49d; --line: #34352f;
+  --accent: #d1a06b; --accent-ink: #1a1408; --danger: #ef7d6e; --stage: #24251f; color-scheme: dark;
+}
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 32px;
+}
+.wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 14px; }
+header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px; }
+h1 { font-family: var(--font-display); font-weight: 600; font-size: 26px; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
+.sub { color: var(--muted); font-size: 13px; margin: 2px 0 0; font-variant-numeric: tabular-nums; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; background: var(--surface); }
+.seg button {
+  font: 500 13px var(--font-body); color: var(--fg); background: transparent; border: 0; border-radius: 999px;
+  padding: 7px 14px; cursor: pointer;
+}
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.toolbar label { font-size: 13px; color: var(--muted); }
+select, .btn {
+  font: 500 13px var(--font-body); color: var(--fg); background: var(--surface); border: 1px solid var(--line);
+  border-radius: 999px; padding: 7px 14px; cursor: pointer;
+}
+select { padding-right: 10px; max-width: 100%; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn:disabled { opacity: 0.45; cursor: default; }
+.btn:focus-visible, select:focus-visible, .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.spacer { flex: 1; }
+.swatches[hidden] { display: none; }
+.swatches { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.sw-label { font-size: 13px; color: var(--muted); margin-right: 2px; }
+.sw { width: 24px; height: 24px; border-radius: 50%; padding: 0; cursor: pointer; border: 2px solid var(--surface); box-shadow: 0 0 0 1px var(--line); }
+.sw[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--accent); }
+.sw:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.stage { position: relative; height: min(68vh, 640px); min-height: 380px; border-radius: 14px; overflow: hidden; background: var(--stage); border: 1px solid var(--line); }
+.stage canvas { display: block; width: 100%; height: 100%; touch-action: none; outline: none; }
+.chip {
+  position: absolute; left: 12px; bottom: 12px; max-width: calc(100% - 24px);
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.chip b { font-weight: 600; }
+.chip .m { color: var(--muted); }
+.chip .warn { color: var(--danger); font-weight: 500; }
+.hint { position: absolute; right: 12px; top: 12px; font-size: 12px; color: var(--muted); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; max-width: 280px; }
+.legend { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 0 24px; margin: 0; padding: 0; list-style: none; }
+.legend li { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 14px; min-width: 0; }
+.legend li span:last-child { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.note { color: var(--muted); font-size: 13px; margin: 0; max-width: 75ch; }
+.err { padding: 24px; color: var(--muted); }
+.start-err { position: absolute; left: 12px; right: 12px; top: 56px; z-index: 3; margin: 0; padding: 10px 14px; background: var(--surface); color: var(--danger); border: 1px solid var(--danger); border-radius: 10px; font-size: 13px; }
+dialog.io { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--fg); padding: 18px; width: min(560px, calc(100vw - 32px)); }
+dialog.io::backdrop { background: rgba(0, 0, 0, 0.45); }
+dialog.io h2 { font: 600 18px var(--font-display); margin: 0 0 6px; }
+dialog.io p { margin: 0 0 10px; color: var(--muted); font-size: 13px; }
+dialog.io textarea { width: 100%; box-sizing: border-box; height: 150px; font: 12px ui-monospace, Consolas, monospace; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 8px; resize: vertical; }
+dialog.io .row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; align-items: center; }
+dialog.io .msg { font-size: 13px; color: var(--muted); }
+dialog.io .msg.bad { color: var(--danger); }
+.fs-btn { position: absolute; left: 12px; top: 12px; z-index: 2; }
+body.full { overflow: hidden; }
+body.full .wrap { position: fixed; inset: 0; z-index: 10; max-width: none; padding: 10px max(10px, env(safe-area-inset-right, 0px)) 10px max(10px, env(safe-area-inset-left, 0px)); background: var(--bg); grid-template-rows: auto 1fr; }
+body.full header, body.full .legend, body.full .note { display: none; }
+body.full .stage { height: auto; min-height: 0; }
+@media (max-width: 560px) { h1 { font-size: 22px; } .hint { display: none; } .spacer { display: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Bohemia salonu</h1>
+      <p class="sub">Salon: 4,70 × 3,59 m · tavan ≈ 2,6 m · eşyalar evin her odasına taşınabilir</p>
+    </div>
+    <div class="seg" role="group" aria-label="Bakış">
+      <button id="view-persp" aria-pressed="true">3B</button>
+      <button id="view-top" aria-pressed="false">Üstten</button>
+      <button id="view-eye" aria-pressed="false">Koltuktan</button>
+      <button id="view-house" aria-pressed="false">Tüm ev</button>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <label for="add-type">Ekle</label>
+    <select id="add-type"></select>
+    <button class="btn primary" id="add-btn">Odaya koy</button>
+    <span class="spacer"></span>
+    <span class="swatches" id="swatches" role="group" aria-label="Kumaş rengi" hidden><span class="sw-label">Kumaş</span></span>
+    <button class="btn" id="rot-btn" disabled>Döndür 90°</button>
+    <button class="btn" id="del-btn" disabled>Kaldır</button>
+    <button class="btn" id="undo-btn" disabled title="Ctrl+Z">Geri al</button>
+    <button class="btn" id="io-btn">Yerleşim</button>
+    <button class="btn" id="reset-btn">Başa al</button>
+  </div>
+
+  <div class="stage" id="stage">
+    <button class="btn fs-btn" id="fs-btn" aria-pressed="false" title="F">Tam ekran</button>
+    <div class="hint">Eşyayı sürükleyerek taşıyın · boş yeri sürükleyerek odayı döndürün · WASD ile gezin (Shift hızlı) · Ctrl+Z geri alır · F tam ekran · seçiliyken R döndürür, oklar 1 cm kaydırır</div>
+    <div class="chip" id="chip"><b>Bir eşyaya dokunun</b> <span class="m">seçip sürükleyebilirsiniz</span></div>
+  </div>
+
+  <ul class="legend" id="legend"></ul>
+  <dialog class="io" id="io-dlg" aria-labelledby="io-title">
+    <h2 id="io-title">Yerleşimi taşı</h2>
+    <p>Buradaki metin şu anki yerleşimdir. Kopyalayıp diğer sürümde aynı pencereye yapıştırın ve "Uygula"ya basın.</p>
+    <textarea id="io-text" spellcheck="false" aria-label="Yerleşim metni"></textarea>
+    <div class="row">
+      <button class="btn" id="io-copy">Kopyala</button>
+      <button class="btn" id="io-save">Dosya indir</button>
+      <button class="btn primary" id="io-apply">Uygula</button>
+      <span class="spacer"></span>
+      <button class="btn" id="io-close">Kapat</button>
+    </div>
+    <div class="row"><span class="msg" id="io-msg" role="status"></span></div>
+  </dialog>
+  <p class="note">Mobilya ölçüleri kelebek.com ürün sayfalarından, oda ölçüleri yerinde ölçülen değerler. Kapı, pencere, kalorifer ve TV prizinin yeri fotoğraflardan tahmin. Çakışan ya da kapının açılma alanına giren eşyanın tabanı kırmızı görünür. Yerleşiminiz bilgisayardaki uygulamada data/layout.json dosyasına, internetten açıldığında bu tarayıcıya kaydedilir; cihazlar arasında taşımak için "Yerleşim" düğmesini kullanın.</p>
+</div>
+
+<script>
+// Any error while the page starts is shown on the page, so a broken start never looks like dead buttons.
+window.addEventListener('error', e => {
+  const stage = document.getElementById('stage');
+  if (!stage || document.getElementById('start-err')) return;
+  const p = document.createElement('p');
+  p.id = 'start-err'; p.className = 'err start-err';
+  p.textContent = 'Bir hata oluştu: ' + (e.message || 'bilinmeyen hata') + (e.lineno ? ' (satır ' + e.lineno + ')' : '');
+  stage.append(p);
+});
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function () {
+  const stage = document.getElementById('stage');
+  if (!window.THREE || !THREE.OrbitControls) {
+    stage.innerHTML = '<p class="err">3B görünüm yüklenemedi. Sayfayı yenileyin.</p>';
+    return;
+  }
+  const W = 4.7, D = 3.59, H = 2.6, T = 0.1;
+  const DOOR = { x: 0.2, z: 0, r: 0.9 };
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+  let renderer;
+  try { renderer = new THREE.WebGLRenderer({ antialias: true }); }
+  catch (e) {
+    stage.innerHTML = '<p class="err">Tarayıcı 3B çizimi (WebGL) açamadı, bu yüzden model ve düğmeler çalışmıyor. ' +
+      'Firefox\'ta: Ayarlar → Genel → Performans altında donanım hızlandırmayı açın, sonra tarayıcıyı yeniden başlatın. ' +
+      'Adres çubuğuna about:support yazıp "WebGL" satırlarına da bakabilirsiniz.</p>';
+    return;
+  }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  // Shadows only change when furniture moves, so the shadow map is redrawn on demand instead of every frame.
+  renderer.shadowMap.autoUpdate = false; renderer.shadowMap.needsUpdate = true;
+  renderer.domElement.tabIndex = 0;
+  stage.prepend(renderer.domElement);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(50, 1, 0.05, 100);
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.maxPolarAngle = Math.PI / 2 - 0.02;
+  controls.minDistance = 0.3;
+  controls.maxDistance = 22;
+
+  const fpColors = { sel: new THREE.Color(0xa87745), bad: new THREE.Color(0xd2392b) };
+  function setThemeColors() {
+    scene.background = new THREE.Color(css('--stage') || '#e4e4df');
+    fpColors.sel.set(css('--accent') || '#a87745');
+    refreshFootprints();
+  }
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', setThemeColors);
+  new MutationObserver(setThemeColors).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+  // Materials
+  const M = (c, r = 0.8, extra = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: r }, extra));
+  const mat = {
+    white: M(0xf2f0eb, 0.55), oak: M(0xc49a68, 0.65), fabric: M(0xe2d9c8, 0.95), fabric2: M(0xd9cfbc, 0.95),
+    groove: M(0xc9c3b8, 0.8), wall: M(0xb4b4ae, 0.95), trim: M(0xf4f3ef, 0.6), base: M(0x7a4426, 0.7),
+    screen: M(0x101216, 0.25, { metalness: 0.2 }), dark: M(0x222222, 0.5),
+    glass: M(0xcfe3ee, 0.05, { transparent: true, opacity: 0.28 }), radiator: M(0xf5f5f2, 0.45)
+  };
+  function shade(m) { m.castShadow = true; m.receiveShadow = true; return m; }
+  function box(w, h, d, m, x = 0, y = 0, z = 0) {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
+    mesh.position.set(x, y + h / 2, z); return shade(mesh);
+  }
+  function cyl(rt, rb, h, m, x = 0, y = 0, z = 0) {
+    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, 16), m);
+    mesh.position.set(x, y + h / 2, z); return shade(mesh);
+  }
+
+  // Şönil fabric colours offered for Bohemia sofas, armchairs and chairs
+  const FAB = {};
+  [['ekru', 'Ekru', '#e2d9c8'], ['krem', 'Krem', '#ece3cf'], ['kahve', 'Kahverengi', '#6f5b4c'],
+   ['camel', 'Camel', '#b28a62'], ['kiremit', 'Kiremit', '#a95c35'], ['turuncu', 'Turuncu', '#c0692c'],
+   ['hardal', 'Hardal', '#b98b2f'], ['gri', 'Gri', '#9c9a95'], ['antrasit', 'Antrasit', '#3c3c3b']].forEach(([k, name, hex]) => {
+    const c = new THREE.Color(hex);
+    FAB[k] = { name, hex, m: [M(c.getHex(), 0.95), M(c.clone().multiplyScalar(0.93).getHex(), 0.95)] };
+  });
+  const baseMat = mat;
+  function withFabric(f) {
+    const c = FAB[f] || FAB.ekru;
+    return Object.assign({}, baseMat, { fabric: c.m[0], fabric2: c.m[1] });
+  }
+
+  // Floor
+  function plankTexture(rw = W, rd = D) {
+    const c = document.createElement('canvas'); c.width = 1024; c.height = 1024;
+    const g = c.getContext('2d'); const rows = 10, rh = 1024 / rows;
+    let seed = 7; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+    for (let r = 0; r < rows; r++) {
+      let x = -rnd() * 400;
+      while (x < 1024) {
+        const len = 300 + rnd() * 260;
+        g.fillStyle = `hsl(${20 + rnd() * 6}, ${48 + rnd() * 8}%, ${30 + rnd() * 8}%)`;
+        g.fillRect(x, r * rh, len, rh);
+        g.strokeStyle = 'rgba(40,18,8,0.55)'; g.lineWidth = 2; g.strokeRect(x, r * rh, len, rh);
+        g.strokeStyle = 'rgba(60,28,12,0.12)'; g.lineWidth = 1;
+        for (let k = 0; k < 5; k++) { const yy = r * rh + rnd() * rh; g.beginPath(); g.moveTo(x, yy); g.lineTo(x + len, yy + (rnd() - 0.5) * 6); g.stroke(); }
+        x += len;
+      }
+    }
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rw / 2, rd / 2);
+    t.encoding = THREE.sRGBEncoding; t.anisotropy = 4; return t;
+  }
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(W, D), new THREE.MeshStandardMaterial({ map: plankTexture(), roughness: 0.6 }));
+  floor.rotation.x = -Math.PI / 2; floor.position.set(W / 2, 0, D / 2); floor.receiveShadow = true;
+  scene.add(floor);
+
+  // Walls
+  function wallBox(g, w, h, d, x, y, z, m = mat.wall) {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
+    mesh.position.set(x, y + h / 2, z); mesh.receiveShadow = true; g.add(mesh); return mesh;
+  }
+  const walls = [];
+  function makeWall(n, c) { const g = new THREE.Group(); scene.add(g); walls.push({ g, n, c }); return g; }
+
+  const gTop = makeWall([0, -1], [W / 2, 0]);
+  wallBox(gTop, 0.2 + T, H, T, (0.2 - T) / 2, 0, -T / 2);
+  wallBox(gTop, 0.9, H - 2.05, T, 0.65, 2.05, -T / 2);
+  wallBox(gTop, W - 1.1 + T, H, T, (1.1 + W + T) / 2, 0, -T / 2);
+  wallBox(gTop, W - 1.1, 0.07, 0.015, (1.1 + W) / 2, 0, 0.0075, mat.base);
+  wallBox(gTop, 0.05, 2.1, 0.02, 0.175, 0, 0.01, mat.trim);
+  wallBox(gTop, 0.05, 2.1, 0.02, 1.125, 0, 0.01, mat.trim);
+  wallBox(gTop, 1.0, 0.05, 0.02, 0.65, 2.05, 0.01, mat.trim);
+
+  const gBot = makeWall([0, 1], [W / 2, D]);
+  wallBox(gBot, W + 2 * T, H, T, W / 2, 0, D + T / 2);
+  wallBox(gBot, W, 0.07, 0.015, W / 2, 0, D - 0.0075, mat.base);
+  wallBox(gBot, 0.24, 0.08, 0.02, W - 0.9, 0.27, D - 0.01, mat.trim); // TV socket
+
+  const gLeft = makeWall([-1, 0], [0, D / 2]);
+  wallBox(gLeft, T, H, D, -T / 2, 0, D / 2);
+  wallBox(gLeft, 0.015, 0.07, D, 0.0075, 0, D / 2, mat.base);
+
+  const gRight = makeWall([1, 0], [W, D / 2]);
+  const wz0 = 0.6, wz1 = 2.55, wy0 = 0.9, wy1 = 2.3;
+  wallBox(gRight, T, H, wz0, W + T / 2, 0, wz0 / 2);
+  wallBox(gRight, T, H, D - wz1, W + T / 2, 0, (wz1 + D) / 2);
+  wallBox(gRight, T, wy0, wz1 - wz0, W + T / 2, 0, (wz0 + wz1) / 2);
+  wallBox(gRight, T, H - wy1, wz1 - wz0, W + T / 2, wy1, (wz0 + wz1) / 2);
+  wallBox(gRight, T * 0.4, wy1 - wy0, wz1 - wz0, W + T / 2, wy0, (wz0 + wz1) / 2, mat.glass);
+  [wz0, wz0 + 0.65, wz0 + 1.3, wz1].forEach(z => wallBox(gRight, T + 0.02, wy1 - wy0, 0.06, W + T / 2, wy0, z, mat.trim));
+  wallBox(gRight, T + 0.02, 0.06, wz1 - wz0, W + T / 2, wy0, (wz0 + wz1) / 2, mat.trim);
+  wallBox(gRight, T + 0.02, 0.06, wz1 - wz0, W + T / 2, wy1 - 0.06, (wz0 + wz1) / 2, mat.trim);
+  wallBox(gRight, 0.18, 0.03, wz1 - wz0 + 0.1, W - 0.04, wy0 - 0.03, (wz0 + wz1) / 2, mat.trim);
+  for (let z = 1.05; z <= 1.95; z += 0.075) wallBox(gRight, 0.08, 0.6, 0.05, W - 0.07, 0.15, z, mat.radiator);
+  wallBox(gRight, 0.015, 0.07, wz0, W - 0.0075, 0, wz0 / 2, mat.base);
+
+  // Door, open 90° toward the left wall
+  scene.add(box(0.04, 2.03, 0.88, mat.trim, 0.22, 0, 0.46));
+  scene.add(box(0.02, 0.02, 0.12, mat.dark, 0.25, 1.0, 0.82));
+  // Door swing on the floor
+  const swing = new THREE.Mesh(new THREE.RingGeometry(DOOR.r - 0.008, DOOR.r, 48, 1, 0, Math.PI / 2),
+    new THREE.MeshBasicMaterial({ color: 0x8a8a84, transparent: true, opacity: 0.6 }));
+  swing.rotation.x = -Math.PI / 2; swing.rotation.z = -Math.PI / 2; swing.position.set(DOOR.x, 0.004, 0);
+  scene.add(swing);
+
+  // Rest of the flat, full-height walls.
+  // Measured: mutfak 2,00 × 3,50, ebeveyn 2,74 × 4,00, 2. oda 4,48 × 2,37, banyo 2,75 × 1,98.
+  // Not measured (taken from the sketch): hol, balkon; WC is what is left beside the banyo; its west half is the building air shaft, left out of the model. Doors between the other rooms are unknown, so none are drawn.
+  // Drawn from the sketch with the kitchen side at z > D, then mirrored: kitchen and hall lie behind the door wall (z < 0), 2. oda and balkon behind the TV wall.
+  const PLACES = [{ name: 'Salon', x0: 0, x1: W, z0: 0, z1: D }];
+  const flipZ = r => [r[0], r[1], D - r[3], D - r[2]];
+  function tileTexture(rw, rd, size, base, grout) {
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const g = c.getContext('2d');
+    g.fillStyle = base; g.fillRect(0, 0, 128, 128);
+    g.strokeStyle = grout; g.lineWidth = 3; g.strokeRect(1.5, 1.5, 125, 125);
+    const t = new THREE.CanvasTexture(c);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rw / size, rd / size);
+    t.encoding = THREE.sRGBEncoding; return t;
+  }
+  function roomLabel(name, dims, cx, cz, maxW) {
+    const c = document.createElement('canvas'); c.width = 512; c.height = 200;
+    const g = c.getContext('2d');
+    g.fillStyle = 'rgba(250,248,243,0.82)';
+    g.beginPath(); if (g.roundRect) g.roundRect(6, 6, 500, 188, 28); else g.rect(6, 6, 500, 188); g.fill();
+    g.fillStyle = '#2a2723'; g.textAlign = 'center';
+    g.font = '600 68px system-ui, sans-serif'; g.fillText(name, 256, 92);
+    g.fillStyle = '#5b564f'; g.font = '44px system-ui, sans-serif'; g.fillText(dims, 256, 160);
+    const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 4;
+    const w = Math.min(1.5, maxW), h = w * 200 / 512;
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false }));
+    m.rotation.x = -Math.PI / 2; m.position.set(cx, 0.012, cz); scene.add(m);
+  }
+  function roomFloor(x0, x1, z0, z1, kind) {
+    const rw = x1 - x0, rd = z1 - z0;
+    if (kind === 'void') {
+      const v = new THREE.Mesh(new THREE.PlaneGeometry(rw, rd), M(0x3a3936, 1));
+      v.rotation.x = -Math.PI / 2; v.position.set((x0 + x1) / 2, -0.002, (z0 + z1) / 2); scene.add(v); return;
+    }
+    if (kind === 'balkon') {
+      const sh = new THREE.Shape(), c = 0.5;
+      [[x0, z0], [x1, z0], [x1, z1 - c], [x1 - c, z1], [x0, z1]].forEach(([x, z], i) => i ? sh.lineTo(x, -z) : sh.moveTo(x, -z));
+      const bf = new THREE.Mesh(new THREE.ShapeGeometry(sh), new THREE.MeshStandardMaterial({ map: tileTexture(1, 1, 0.4, '#a8a39b', '#857f76'), roughness: 0.7 }));
+      bf.rotation.x = -Math.PI / 2; bf.receiveShadow = true; scene.add(bf); return;
+    }
+    const map = kind === 'parke' ? plankTexture(rw, rd)
+      : kind === 'balkon' ? tileTexture(rw, rd, 0.4, '#a8a39b', '#857f76')
+      : tileTexture(rw, rd, 0.6, '#dcd9d3', '#b9b5ad');
+    const f = new THREE.Mesh(new THREE.PlaneGeometry(rw, rd), new THREE.MeshStandardMaterial({ map, roughness: 0.7 }));
+    f.rotation.x = -Math.PI / 2; f.position.set((x0 + x1) / 2, 0, (z0 + z1) / 2); f.receiveShadow = true; scene.add(f);
+  }
+  // [name, size text, floor, rectangles [x0, x1, z0, z1]] in salon coordinates (salon is x 0–4.7, z 0–3.59)
+  [['Mutfak', '2,00 × 3,50 m', 'tile', [[1.2, 4.7, D + 0.1, D + 2.1]]],
+   ['Hol', 'ölçülmedi', 'tile', [[-1.1, 1.1, D + 0.1, D + 2.1], [-1.1, -0.1, 0, D + 0.1]]],
+   ['2. oda', '4,48 × 2,37 m', 'parke', [[-1.1, 3.38, -2.47, -0.1]]],
+   ['Balkon', 'ölçülmedi', 'balkon', [[3.48, W, -2.47, -0.1]]],
+   ['Ebeveyn', '2,74 × 4,00 m', 'parke', [[-3.94, -1.2, -2.47, 1.53]]],
+   ['Banyo', '2,75 × 1,98 m', 'tile', [[-3.94, -1.2, 1.63, 3.61]]],
+   ['WC', '≈1,37 × 1,98 m', 'tile', [[-2.57, -1.2, 3.71, D + 2.1]]]
+  ].forEach(([name, dims, kind, rects0]) => {
+    const rects = rects0.map(flipZ);
+    rects.forEach(r => { roomFloor(r[0], r[1], r[2], r[3], kind); PLACES.push({ name, x0: r[0], x1: r[1], z0: r[2], z1: r[3] }); });
+    const [x0, x1, z0, z1] = rects[0];
+    roomLabel(name, dims, (x0 + x1) / 2, (z0 + z1) / 2, x1 - x0 - 0.15);
+  });
+  const ZT = D + 2.1, ZB = -2.47;
+  // Full-height walls. Outside walls carry a normal and hide when the camera is outside them, like the salon's.
+  [[-2.67, -1.05, ZT, ZT + T, [0, -1]], [-0.15, W + T, ZT, ZT + T, [0, -1]], [-1.05, -0.15, ZT, ZT + T, [0, -1], 2.05], [W, W + T, D + T, D + 1.1, [1, 0]], [W, W + T, D + 2.0, ZT, [1, 0]], [W, W + T, D + 1.1, D + 2.0, [1, 0], 2.1], [W, W + T, D + 1.1, D + 2.0, [1, 0], 0, 0.9], [W, W + T, -1.97, -T, [1, 0], 0, 0.9], [W, W + T, -1.97, -T, [1, 0], 2.2], [-4.04, -3.8, ZB - T, ZB, [0, 1]], [-2.6, 3.48, ZB - T, ZB, [0, 1]], [3.48, W - 0.5, ZB - T, ZB, [0, 1], 0, 0.9], [3.48, W - 0.5, ZB - T, ZB, [0, 1], 2.2], [-3.8, -2.6, ZB - T, ZB, [0, 1], 2.1], [-3.8, -2.6, ZB - T, ZB, [0, 1], 0, 0.9],
+   [-4.04, -3.94, ZB, 1.53, [-1, 0]], [-4.04, -3.94, 1.53, 3.61, [-1, 0]],
+   [-3.94, -1.1, 1.53, 1.63], [-4.04, -2.57, 3.61, 3.71, [0, -1]], [-2.57, -1.2, 3.61, 3.71], [-2.67, -2.57, 3.71, ZT, [-1, 0]], [-1.2, -1.1, ZB, 0.64], [-1.2, -1.1, 1.44, 2.34], [-1.2, -1.1, 3.04, D + 1.05], [-1.2, -1.1, D + 1.75, ZT],
+   [3.38, 3.48, ZB, -1.7], [3.38, 3.48, -0.15, -T], [3.38, 3.48, -1.7, -0.15, null, 2.1], [-1.1, -1.0, -T, 0], [-0.2, -T, -T, 0], [1.1, 1.2, D + T, D + 1.15], [1.1, 1.2, D + 1.95, ZT]
+  ].forEach(w => {
+    const [x0, x1, z0, z1] = flipZ(w), cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+    const g = w[4] ? makeWall(w[4], [cx, cz]) : scene;
+    const y0 = w[5] || 0, y1 = w[6] || H;
+    g.add(box(x1 - x0, y1 - y0, z1 - z0, mat.wall, cx, y0, cz));
+  });
+  // Doors seen in the listing photos (model coordinates). Kitchen door: on the hall-side short wall, near the outside wall,
+  // hinged on that side and opening into the kitchen against the outside wall. WC door straight across the hall; its swing is unknown.
+  function doorway(x, z0, z1) {
+    scene.add(box(T, H - 2.05, z1 - z0, mat.wall, x, 2.05, (z0 + z1) / 2));
+    [z0, z1].forEach(z => scene.add(box(T + 0.03, 2.1, 0.05, mat.trim, x, 0, z + (z === z0 ? 0.025 : -0.025))));
+    scene.add(box(T + 0.03, 0.05, z1 - z0, mat.trim, x, 2.05, (z0 + z1) / 2));
+  }
+  doorway(1.15, -1.95, -1.15);
+  scene.add(box(0.8, 2.03, 0.04, mat.trim, 1.6, 0, -1.91));
+  const kSwing = new THREE.Mesh(new THREE.RingGeometry(0.792, 0.8, 48, 1, -Math.PI / 2, Math.PI / 2),
+    new THREE.MeshBasicMaterial({ color: 0x8a8a84, transparent: true, opacity: 0.6 }));
+  kSwing.rotation.x = -Math.PI / 2; kSwing.position.set(1.2, 0.004, -1.95); scene.add(kSwing);
+  doorway(-1.15, -1.75, -1.05);
+  function doorwayX(z, x0, x1) {
+    scene.add(box(x1 - x0, H - 2.05, T, mat.wall, (x0 + x1) / 2, 2.05, z));
+    [x0 + 0.025, x1 - 0.025].forEach(x => scene.add(box(0.05, 2.1, T + 0.03, mat.trim, x, 0, z)));
+    scene.add(box(x1 - x0, 0.05, T + 0.03, mat.trim, (x0 + x1) / 2, 2.05, z));
+  }
+  function swingArc(r, x, z, start) {
+    const m = new THREE.Mesh(new THREE.RingGeometry(r - 0.008, r, 48, 1, start, Math.PI / 2),
+      new THREE.MeshBasicMaterial({ color: 0x8a8a84, transparent: true, opacity: 0.6 }));
+    m.rotation.x = -Math.PI / 2; m.position.set(x, 0.004, z); scene.add(m);
+  }
+  // From the corridor photo: corridor runs from an arch at the hall to the 2. oda door; banyo and ebeveyn doors on its west side.
+  scene.add(box(1.0, H - 2.2, 0.12, mat.trim, -0.6, 2.2, -0.05));
+  // Banyo door near the arch; swing not visible, drawn closed.
+  doorway(-1.15, 0.55, 1.25);
+  scene.add(box(0.04, 2.03, 0.66, mat.trim, -1.15, 0, 0.9));
+  // Ebeveyn door at the north end of its long wall, hinged at that corner, opening into the room against the banyo wall.
+  doorway(-1.15, 2.15, 2.95);
+  scene.add(box(0.8, 2.03, 0.04, mat.trim, -1.6, 0, 2.13));
+  swingArc(0.8, -1.2, 2.15, -Math.PI);
+  // 2. oda door straight ahead at the end of the corridor, hinged on the west side, opening into the room.
+  doorwayX(D + 0.05, -1.0, -0.2);
+  scene.add(box(0.04, 2.03, 0.8, mat.trim, -0.98, 0, D + 0.5));
+  swingArc(0.8, -1.0, D + 0.1, -Math.PI / 2);
+  // From the 2. oda photo: balcony door at the north end of the wall to the balkon, window beside it with a radiator below.
+  scene.add(box(T, 0.9, 0.85, mat.wall, 3.43, 0, D + 1.275));
+  scene.add(box(T * 0.4, 1.2, 0.85, mat.glass, 3.43, 0.9, D + 1.275));
+  [D + 0.85, D + 1.275, D + 1.7].forEach(z => scene.add(box(T + 0.02, 1.2, 0.05, mat.trim, 3.43, 0.9, z)));
+  [0.9, 2.05].forEach(y => scene.add(box(T + 0.02, 0.05, 0.85, mat.trim, 3.43, y, D + 1.275)));
+  [D + 0.175, D + 0.825].forEach(z => scene.add(box(T + 0.02, 2.1, 0.05, mat.trim, 3.43, 0, z)));
+  scene.add(box(T + 0.02, 0.05, 0.7, mat.trim, 3.43, 2.05, D + 0.5));
+  scene.add(box(0.66, 2.0, 0.03, mat.glass, 3.05, 0.02, D + 0.17));
+  [2.72, 3.38].forEach(x => scene.add(box(0.05, 2.03, 0.05, mat.trim, x - (x > 3 ? 0.025 : -0.025), 0, D + 0.17)));
+  swingArc(0.7, 3.38, D + 0.15, -Math.PI);
+  for (let z = D + 1.0; z <= D + 1.55; z += 0.075) scene.add(box(0.08, 0.6, 0.05, mat.radiator, 3.31, 0.15, z));
+  // Ebeveyn window (south wall, near the west corner) with a radiator below.
+  const ewz = D + 2.47 + T / 2;
+  scene.add(box(1.2, 1.2, T * 0.4, mat.glass, -3.2, 0.9, ewz));
+  [-3.8, -3.2, -2.6].forEach(x => scene.add(box(0.05, 1.2, T + 0.02, mat.trim, x, 0.9, ewz)));
+  [0.9, 2.05].forEach(y => scene.add(box(1.2, 0.05, T + 0.02, mat.trim, -3.2, y, ewz)));
+  for (let x = -3.5; x <= -2.95; x += 0.075) scene.add(box(0.05, 0.6, 0.08, mat.radiator, x, 0.15, ewz - T / 2 - 0.07));
+  // Kitchen window (end wall, near the north corner); radiator and combi boiler on the north wall beside it.
+  scene.add(box(T * 0.4, 1.2, 0.9, mat.glass, W + T / 2, 0.9, -1.55));
+  [-2.0, -1.55, -1.1].forEach(z => scene.add(box(T + 0.02, 1.2, 0.05, mat.trim, W + T / 2, 0.9, z)));
+  [0.9, 2.05].forEach(y => scene.add(box(T + 0.02, 0.05, 0.9, mat.trim, W + T / 2, y, -1.55)));
+  for (let x = 4.25; x <= 4.6; x += 0.075) scene.add(box(0.05, 0.6, 0.08, mat.radiator, x, 0.15, -2.03));
+  scene.add(box(0.4, 0.7, 0.28, mat.radiator, 4.3, 1.3, -1.95));
+  // Balkon (from its photos): enclosed, parapet with windows above on both outside walls.
+  scene.add(box(T * 0.4, 1.3, 1.87, mat.glass, W + T / 2, 0.9, D + 1.035));
+  [D + 0.125, D + 0.75, D + 1.35, D + 1.945].forEach(z => scene.add(box(T + 0.02, 1.3, 0.05, mat.trim, W + T / 2, 0.9, z)));
+  [0.9, 2.15].forEach(y => scene.add(box(T + 0.02, 0.05, 1.87, mat.trim, W + T / 2, y, D + 1.035)));
+  const bz = D + 2.47 + T / 2;
+  scene.add(box(0.72, 1.3, T * 0.4, mat.glass, 3.84, 0.9, bz));
+  [3.505, 4.175].forEach(x => scene.add(box(0.05, 1.3, T + 0.02, mat.trim, x, 0.9, bz)));
+  [0.9, 2.15].forEach(y => scene.add(box(0.72, 0.05, T + 0.02, mat.trim, 3.84, y, bz)));
+  // The angled corner piece
+  {
+    const c = 0.5, L = c * Math.SQRT2 + 0.08, o = T / 2 / Math.SQRT2;
+    const cx = W - c / 2 + o, cz = D + 2.47 - c / 2 + o;
+    const g = makeWall([Math.SQRT1_2, Math.SQRT1_2], [cx, cz]);
+    const piece = (w, h, d, m, y) => { const b = box(w, h, d, m, cx, y, cz); b.rotation.y = Math.PI / 4; return b; };
+    g.add(piece(L, 0.9, T, mat.wall, 0), piece(L, H - 2.2, T, mat.wall, 2.2));
+    scene.add(piece(L - 0.08, 1.3, T * 0.4, mat.glass, 0.9), piece(L - 0.08, 0.05, T + 0.02, mat.trim, 0.9), piece(L - 0.08, 0.05, T + 0.02, mat.trim, 2.15));
+  }
+  // Entrance door (from the hall photo): in the hall's corner by the WC wall, hinged on that side, opening into the hall.
+  scene.add(box(0.9, 2.03, 0.05, mat.trim, -0.6, 0, -2.125));
+  const eSwing = new THREE.Mesh(new THREE.RingGeometry(0.892, 0.9, 48, 1, -Math.PI / 2, Math.PI / 2),
+    new THREE.MeshBasicMaterial({ color: 0x8a8a84, transparent: true, opacity: 0.6 }));
+  eSwing.rotation.x = -Math.PI / 2; eSwing.position.set(-1.05, 0.004, -2.1); scene.add(eSwing);
+  scene.add(box(0.04, 2.03, 0.66, mat.trim, -1.15, 0, -1.4));
+
+  // Furniture builders. Local front faces +z, width along x.
+  function sofa(Wd, f) {
+    const mat = withFabric(f);
+    const Dp = 1.01, g = new THREE.Group(), arm = 0.14, legH = 0.12;
+    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => g.add(cyl(0.022, 0.016, legH, mat.oak, sx * (Wd / 2 - 0.08), 0, sz * (Dp / 2 - 0.08))));
+    g.add(box(Wd, 0.2, Dp, mat.fabric, 0, legH, 0));
+    g.add(box(arm, 0.3, Dp, mat.fabric, -Wd / 2 + arm / 2, legH + 0.2, 0));
+    g.add(box(arm, 0.3, Dp, mat.fabric, Wd / 2 - arm / 2, legH + 0.2, 0));
+    const inner = Wd - 2 * arm, backT = 0.22, n = Wd > 2.1 ? 3 : 2;
+    g.add(box(inner, 0.765 - 0.32, backT, mat.fabric, 0, 0.32, -Dp / 2 + backT / 2));
+    const cw = inner / n - 0.01, cd = Dp - backT - 0.02;
+    for (let i = 0; i < n; i++) {
+      const cx = -inner / 2 + inner / n * (i + 0.5);
+      g.add(box(cw, 0.13, cd, mat.fabric2, cx, 0.32, -Dp / 2 + backT + cd / 2));
+      g.add(box(cw, 0.3, 0.14, mat.fabric2, cx, 0.45, -Dp / 2 + backT + 0.07));
+    }
+    return g;
+  }
+  function armchair(f) {
+    const mat = withFabric(f);
+    const Wd = 0.79, Dp = 0.85, g = new THREE.Group(), arm = 0.1;
+    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => g.add(cyl(0.02, 0.014, 0.14, mat.oak, sx * (Wd / 2 - 0.06), 0, sz * (Dp / 2 - 0.06))));
+    g.add(box(Wd, 0.2, Dp, mat.fabric, 0, 0.14, 0));
+    g.add(box(arm, 0.28, Dp - 0.1, mat.oak, -Wd / 2 + arm / 2, 0.34, 0.05));
+    g.add(box(arm, 0.28, Dp - 0.1, mat.oak, Wd / 2 - arm / 2, 0.34, 0.05));
+    g.add(box(Wd, 0.9 - 0.34, 0.16, mat.fabric, 0, 0.34, -Dp / 2 + 0.08));
+    g.add(box(Wd - 2 * arm - 0.02, 0.12, Dp - 0.2, mat.fabric2, 0, 0.34, 0.08));
+    return g;
+  }
+  function chair(f) {
+    const mat = withFabric(f);
+    const g = new THREE.Group();
+    [[-0.19, -0.18], [0.19, -0.18], [-0.19, 0.2], [0.19, 0.2]].forEach(([x, z]) => g.add(cyl(0.017, 0.012, 0.44, mat.oak, x, 0, z)));
+    g.add(box(0.485, 0.06, 0.46, mat.fabric, 0, 0.44, 0.02));
+    for (const s of [-1, 1]) g.add(box(0.03, 0.3, 0.03, mat.oak, s * 0.1, 0.5, -0.21));
+    const back = new THREE.Mesh(new THREE.CylinderGeometry(0.23, 0.23, 0.05, 36), mat.fabric);
+    back.scale.set(1, 1, 0.72); back.rotation.x = Math.PI / 2; back.position.set(0, 0.7, -0.23);
+    g.add(shade(back));
+    return g;
+  }
+  // Bohemia 160 bed: headboard 175 × 12 × 100 behind a 167 × 214 × 37 upholstered frame (front = foot end)
+  function bed160(f) {
+    const mat = withFabric(f), g = new THREE.Group();
+    const hb = -1.13, fz = hb + 0.12;
+    g.add(box(1.75, 0.92, 0.12, mat.fabric, 0, 0.08, hb + 0.06));
+    for (let i = -3; i <= 3; i++) g.add(box(0.012, 0.86, 0.008, mat.fabric2, i * 0.22, 0.11, hb + 0.124));
+    [[-1, 0.1], [1, 0.1], [-1, 2.04], [1, 2.04]].forEach(([sx, dz]) => g.add(cyl(0.022, 0.016, 0.18, mat.oak, sx * 0.74, 0, fz + dz)));
+    g.add(box(1.67, 0.19, 2.14, mat.fabric, 0, 0.18, fz + 1.07));
+    const sheet = M(0xf3f1ec, 0.9), duvet = M(0xdcd6cc, 0.95);
+    g.add(box(1.6, 0.2, 2.0, sheet, 0, 0.37, fz + 1.07));
+    g.add(box(1.64, 0.06, 1.25, duvet, 0, 0.57, fz + 1.45));
+    [-0.4, 0.4].forEach(x => g.add(box(0.62, 0.12, 0.4, sheet, x, 0.57, fz + 0.3)));
+    return g;
+  }
+  function benchPuf(f) {
+    const mat = withFabric(f), g = new THREE.Group();
+    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => g.add(cyl(0.018, 0.013, 0.12, mat.oak, sx * 0.49, 0, sz * 0.17)));
+    g.add(box(1.1, 0.33, 0.45, mat.fabric, 0, 0.12, 0));
+    return g;
+  }
+  function diningTable() {
+    const L = 1.6, Wd = 0.9, g = new THREE.Group();
+    g.add(box(L, 0.03, Wd, mat.white, 0, 0.73, 0));
+    g.add(box(L - 0.3, 0.06, Wd - 0.2, mat.oak, 0, 0.67, 0));
+    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => g.add(cyl(0.028, 0.02, 0.67, mat.oak, sx * (L / 2 - 0.2), 0, sz * (Wd / 2 - 0.15))));
+    return g;
+  }
+  function cabinet(Wd, Ht, Dp, n) {
+    const g = new THREE.Group(), bodyTop = Ht - 0.03, zf = Dp / 2 + 0.003, dw = Wd / n;
+    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => g.add(cyl(0.02, 0.012, 0.15, mat.oak, sx * (Wd / 2 - 0.08), 0, sz * (Dp / 2 - 0.07))));
+    g.add(box(Wd, bodyTop - 0.15, Dp, mat.white, 0, 0.15, 0));
+    g.add(box(Wd + 0.01, 0.03, Dp + 0.01, mat.oak, 0, bodyTop, 0));
+    for (let i = 0; i < n; i++) {
+      const cx = -Wd / 2 + dw * (i + 0.5);
+      const r = Math.min(dw * 0.34, (bodyTop - 0.15) * 0.3), cy = bodyTop - 0.07 - r;
+      const arc = new THREE.Mesh(new THREE.TorusGeometry(r, 0.004, 6, 40, Math.PI), mat.groove);
+      arc.position.set(cx, cy, zf); g.add(arc);
+      g.add(box(0.008, cy - 0.21, 0.004, mat.groove, cx - r, 0.21, zf));
+      g.add(box(0.008, cy - 0.21, 0.004, mat.groove, cx + r, 0.21, zf));
+      g.add(box(2 * r, 0.008, 0.004, mat.groove, cx, 0.21, zf));
+      const knob = new THREE.Mesh(new THREE.SphereGeometry(0.018, 12, 12), mat.oak);
+      knob.position.set(cx + (i % 2 ? -1 : 1) * (dw / 2 - 0.05), cy, zf + 0.012); g.add(shade(knob));
+      if (i > 0) g.add(box(0.004, bodyTop - 0.15, 0.004, mat.groove, -Wd / 2 + dw * i, 0.15, zf));
+    }
+    return g;
+  }
+  // Open-cubby unit on legs: cx = centre x, w = width, top = overall height, n = number of cells
+  const lightOak = M(0xa88560, 0.7), legMat = M(0xc8c4bc, 0.4, { metalness: 0.3 });
+  function openUnit(g, cx, w, top, Dp, n) {
+    const t = 0.018, legH = 0.1, x0 = cx - w / 2;
+    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => g.add(cyl(0.015, 0.015, legH, legMat, cx + sx * (w / 2 - 0.04), 0, sz * (Dp / 2 - 0.04))));
+    for (let i = 1; i < n; i++) g.add(cyl(0.015, 0.015, legH, legMat, x0 + w / n * i, 0, Dp / 2 - 0.04));
+    g.add(box(w, t, Dp, lightOak, cx, legH, 0));
+    g.add(box(w, t, Dp, lightOak, cx, top - t, 0));
+    g.add(box(w, top - legH, 0.008, lightOak, cx, legH, -Dp / 2 + 0.004));
+    for (let i = 0; i <= n; i++) {
+      const px = Math.min(Math.max(x0 + w / n * i, x0 + t / 2), x0 + w - t / 2);
+      g.add(box(t, top - legH, Dp, lightOak, px, legH, 0));
+    }
+  }
+  const slatMat = M(0x8f6c48, 0.7);
+  function slatDoor(g, cx, w, y0, h, Dp) {
+    g.add(box(w - 0.008, h, 0.012, lightOak, cx, y0, Dp / 2 + 0.006));
+    for (let x = cx - w / 2 + 0.02; x <= cx + w / 2 - 0.019; x += 0.028) g.add(box(0.014, h, 0.012, slatMat, x, y0, Dp / 2 + 0.016));
+  }
+  // 300 × 42 × 138 set (seen from the front): low cabinet with open box on the left,
+  // 180 cm TV bench with three slatted doors and an open niche in the middle, tall open bookcase on the right
+  function tvSet() {
+    const g = new THREE.Group(), Dp = 0.42, inW = 0.6 - 0.036;
+    openUnit(g, -1.2, 0.6, 0.77, Dp, 1);
+    g.add(box(inW, 0.018, Dp - 0.02, lightOak, -1.2, 0.51, 0.01));
+    slatDoor(g, -1.2, 0.6, 0.118, 0.39, Dp);
+    openUnit(g, 0, 1.8, 0.55, Dp, 3);
+    slatDoor(g, -0.6, 0.6, 0.118, 0.414, Dp);
+    slatDoor(g, 0.6, 0.6, 0.118, 0.414, Dp);
+    slatDoor(g, 0, 0.6, 0.118, 0.29, Dp);
+    g.add(box(inW, 0.018, Dp - 0.02, lightOak, 0, 0.408, 0.01));
+    openUnit(g, 1.2, 0.6, 1.38, Dp, 1);
+    [0.38, 0.68, 0.98].forEach(y => g.add(box(inW, 0.018, Dp - 0.02, lightOak, 1.2, y, 0.01)));
+    g.add(box(0.42, 0.02, 0.22, mat.dark, 0, 0.55, -0.02));
+    g.add(box(0.06, 0.09, 0.03, mat.dark, 0, 0.57, -0.06));
+    g.add(box(1.44, 0.83, 0.03, mat.screen, 0, 0.64, -0.06));
+    return g;
+  }
+  function bookcase() {
+    const Wd = 1.2, Ht = 1.713, Dp = 0.386, g = new THREE.Group();
+    g.add(box(Wd, 0.04, Dp, mat.white, 0, 0, 0));
+    [0.36, 0.69, 1.02, 1.35].forEach(y => g.add(box(Wd, 0.025, Dp, mat.white, 0, y, 0)));
+    for (const s of [-1, 1]) g.add(box(0.025, Ht - 0.16, Dp - 0.06, mat.oak, s * 0.2, 0.04, 0));
+    for (const s of [-1, 1]) {
+      const top = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.025, 28, 1, false, 0, Math.PI), mat.oak);
+      top.rotation.z = Math.PI / 2; top.rotation.y = Math.PI / 2; top.position.set(s * 0.2, Ht - 0.12, 0); g.add(shade(top));
+    }
+    [[-0.45, 0.04], [0.45, 0.36], [0, 0.69], [-0.45, 1.02], [0.45, 1.02]].forEach(([x, y]) => g.add(box(0.025, 0.305, Dp - 0.06, mat.oak, x, y + 0.025, 0)));
+    return g;
+  }
+  // Oak corner bookcase 96,3/96,3 × 28 × 202: one narrow unit on each wall and a diagonal unit in the corner.
+  // Local: one arm along the back (-z), one along the left (-x).
+  const cornerOak = M(0x9a7856, 0.75), cornerOakDark = M(0x7d5f42, 0.8);
+  function shelfUnit(w, d, h) {
+    const g = new THREE.Group(), t = 0.018;
+    g.add(box(t, h, d, cornerOak, -w / 2 + t / 2, 0, 0));
+    g.add(box(t, h, d, cornerOak, w / 2 - t / 2, 0, 0));
+    g.add(box(w, h, 0.006, cornerOakDark, 0, 0, -d / 2 + 0.003));
+    g.add(box(w, 0.06, d, cornerOak, 0, 0, 0));
+    g.add(box(w, t, d, cornerOak, 0, h - t, 0));
+    [0.36, 0.68, 1.0, 1.32, 1.64].forEach(y => g.add(box(w - 2 * t, t, d - 0.02, cornerOak, 0, y, 0.01)));
+    return g;
+  }
+  function billyCorner() {
+    const g = new THREE.Group(), S = 0.963, Dp = 0.28, h = 2.02, a = -S / 2, uw = 0.413;
+    const back = shelfUnit(uw, Dp, h); back.position.set(S / 2 - uw / 2, 0, a + Dp / 2); g.add(back);
+    const side = shelfUnit(uw, Dp, h); side.position.set(a + Dp / 2, 0, S / 2 - uw / 2); side.rotation.y = Math.PI / 2; g.add(side);
+    const diag = shelfUnit(0.39, 0.4, h); diag.position.set(a + 0.274, 0, a + 0.274); diag.rotation.y = Math.PI / 4; g.add(diag);
+    return g;
+  }
+  function coffeeTable() {
+    const g = new THREE.Group();
+    g.add(box(1.2, 0.03, 0.6, mat.white, 0, 0.37, 0));
+    g.add(box(1.05, 0.02, 0.45, mat.oak, 0, 0.12, 0));
+    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => g.add(cyl(0.024, 0.016, 0.37, mat.oak, sx * 0.52, 0, sz * 0.23)));
+    return g;
+  }
+
+  // w = width along local x, d = depth along local z (metres)
+  const CATALOG = {
+    karyola: { name: 'Karyola 160 + başlık', dims: '175 × 226 × 100 cm', w: 1.75, d: 2.26, fabric: true, make: it => bed160(it.color) },
+    komodin: { name: 'Komodin', dims: '56 × 46 × 45,7 cm', w: 0.56, d: 0.46, make: () => cabinet(0.56, 0.457, 0.46, 1) },
+    sifonyer: { name: 'Geniş şifonyer', dims: '98,4 × 46 × 87,5 cm', w: 0.984, d: 0.46, make: () => cabinet(0.984, 0.875, 0.46, 2) },
+    dolap4: { name: '4 kapaklı dolap', dims: '187,2 × 63,4 × 228,3 cm', w: 1.872, d: 0.634, make: () => cabinet(1.872, 2.283, 0.634, 4) },
+    benchpuf: { name: 'Bench puf', dims: '110 × 45 × 45 cm', w: 1.1, d: 0.45, fabric: true, make: it => benchPuf(it.color) },
+    sofa2: { name: "2'li koltuk (yataklı)", dims: '197 × 101 × 76,5 cm', w: 1.97, d: 1.01, fabric: true, make: it => sofa(1.97, it.color) },
+    sofa3: { name: "3'lü koltuk (yataklı)", dims: '233 × 101 × 76,5 cm', w: 2.33, d: 1.01, fabric: true, make: it => sofa(2.33, it.color) },
+    berjer: { name: 'Berjer', dims: '79 × 85 × 90 cm', w: 0.79, d: 0.85, fabric: true, make: it => armchair(it.color) },
+    sehpa: { name: 'Orta sehpa', dims: '120 × 60 × 40 cm', w: 1.2, d: 0.6, make: coffeeTable },
+    tvset: { name: 'TV ünitesi seti + 65" TV', dims: '300 × 42 × 138 cm', w: 3.0, d: 0.42, make: tvSet },
+    kitaplik: { name: 'Kitaplık', dims: '120 × 38,6 × 171,3 cm', w: 1.2, d: 0.386, make: bookcase },
+    table: { name: 'Açılır masa', dims: '160–200 × 90 × 76 cm', w: 1.6, d: 0.9, make: diningTable },
+    chair: { name: 'Sandalye', dims: '48,5 × 63 × 84,5 cm', w: 0.485, d: 0.55, fabric: true, make: it => chair(it.color) },
+    konsol: { name: 'Konsol', dims: '189 × 46 × 79,7 cm', w: 1.89, d: 0.46, make: () => cabinet(1.89, 0.797, 0.46, 4) },
+    billy: { name: 'Köşe kitaplık (meşe)', dims: '96,3/96,3 × 28 × 202 cm', w: 0.963, d: 0.963, make: billyCorner,
+      parts: [[-0.4815, 0.4815, -0.4815, -0.2015], [-0.4815, -0.2015, -0.2015, 0.4815], [-0.2015, 0.07, -0.2015, 0.07]] }
+  };
+
+  // Default layout: plan rectangle in cm (x from left wall, y from door wall) and rotation (0 faces the TV wall, 1 faces the window, 2 faces the door wall, 3 faces the left wall)
+  const DEFAULT = [
+    ['sofa2', 112, 0, 309, 101, 0], ['sofa2', 0, 150, 101, 347, 1],
+    ['sehpa', 150, 160, 270, 220, 0], ['tvset', 101, 317, 401, 359, 2],
+    ['table', 350, 95, 440, 255, 1],
+    ['chair', 302, 122, 350, 170, 1], ['chair', 302, 182, 350, 230, 1],
+    ['chair', 371, 50, 419, 95, 0], ['chair', 371, 255, 419, 300, 2],
+    ['billy', 0, 0, 96.3, 96.3, 0]
+  ];
+  const BEDROOM_DEFAULT = [
+    ['karyola', -394, 318.5, -168, 493.5, 1], ['komodin', -394, 262.5, -348, 318.5, 1], ['komodin', -394, 493.5, -348, 549.5, 1],
+    ['sifonyer', -300, 206, -201.6, 252, 0], ['dolap4', -90, 542.6, 97.2, 606, 2]
+  ];
+  const BEDROOM_TYPES = ['karyola', 'komodin', 'sifonyer', 'dolap4', 'benchpuf'];
+  function addBedroomOnce(list, flagKey) {
+    try {
+      if (localStorage.getItem(flagKey) || list.some(i => BEDROOM_TYPES.includes(i.type))) { localStorage.setItem(flagKey, '1'); return false; }
+      BEDROOM_DEFAULT.forEach(([type, x0, y0, x1, y1, r]) => list.push({ id: nextId++, type, x: (x0 + x1) / 200, z: (y0 + y1) / 200, r }));
+      localStorage.setItem(flagKey, '1');
+      return true;
+    } catch (e) { return false; }
+  }
+  const STORE_KEY = 'bohemia-salon-layout-v1';
+  let nextId = 1;
+  const defaultState = () => DEFAULT.concat(BEDROOM_DEFAULT).map(([type, x0, y0, x1, y1, r]) => ({ id: nextId++, type, x: (x0 + x1) / 200, z: (y0 + y1) / 200, r }));
+  function parseLayout(s) {
+    if (!Array.isArray(s) || !s.length) return null;
+    s.forEach(i => { if (i && i.type === 'tvunit') i.type = 'tvset'; });
+    if (!s.every(i => i && CATALOG[i.type] && isFinite(i.x) && isFinite(i.z))) return null;
+    return s.map(i => ({ id: nextId++, type: i.type, x: i.x, z: i.z, r: ((i.r | 0) % 4 + 4) % 4, color: FAB[i.color] ? i.color : undefined }));
+  }
+  function loadState() {
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      const parsed = raw && parseLayout(JSON.parse(raw));
+      if (parsed) return parsed;
+    } catch (e) { /* storage unavailable */ }
+    return defaultState();
+  }
+  // The local app's server keeps the layout in data/layout.json; serverOk turns true once it answers.
+  let serverOk = false, putTimer = null;
+  function pushServer() {
+    if (!serverOk) return;
+    clearTimeout(putTimer);
+    putTimer = setTimeout(() => {
+      fetch('api/layout', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: layoutJson() })
+        .catch(() => { /* server stopped: local storage still has it */ });
+    }, 300);
+  }
+  const layoutJson = () => JSON.stringify(items.map(({ type, x, z, r, color }) => ({ type, x, z, r, color })));
+  function saveState() {
+    try { localStorage.setItem(STORE_KEY, layoutJson()); } catch (e) { /* ignore */ }
+    pushServer();
+  }
+
+  const furn = new THREE.Group(); scene.add(furn);
+  let items = loadState();
+  try {
+    if (!localStorage.getItem('bohemia-billy-added') && !items.some(i => i.type === 'billy')) {
+      items.push({ id: nextId++, type: 'billy', x: 0.475, z: 0.475, r: 0 });
+    }
+    localStorage.setItem('bohemia-billy-added', '1');
+  } catch (e) { /* storage unavailable */ }
+  addBedroomOnce(items, 'bohemia-bedroom-added');
+  let selected = null;
+
+  function extents(it) {
+    const c = CATALOG[it.type], odd = it.r % 2 === 1;
+    return { hx: (odd ? c.d : c.w) / 2, hz: (odd ? c.w : c.d) / 2 };
+  }
+  function rectOf(it) { const e = extents(it); return { x0: it.x - e.hx, x1: it.x + e.hx, z0: it.z - e.hz, z1: it.z + e.hz }; }
+  function roomAt(x, z) {
+    let best = PLACES[0], bestD = Infinity;
+    PLACES.forEach(p => {
+      const dx = Math.max(p.x0 - x, 0, x - p.x1), dz = Math.max(p.z0 - z, 0, z - p.z1), d = dx * dx + dz * dz;
+      if (d < bestD) { bestD = d; best = p; }
+    });
+    return best;
+  }
+  function clampItem(it) {
+    const e = extents(it);
+    const room = roomAt(it.x, it.z);
+    it.x = Math.min(room.x1 - e.hx, Math.max(room.x0 + e.hx, it.x));
+    it.z = Math.min(room.z1 - e.hz, Math.max(room.z0 + e.hz, it.z));
+    if (room.x1 - room.x0 < 2 * e.hx) it.x = (room.x0 + room.x1) / 2;
+    if (room.z1 - room.z0 < 2 * e.hz) it.z = (room.z0 + room.z1) / 2;
+  }
+
+  function makeFootprint() {
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(new Array(15).fill(0), 3));
+    const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: 0xa87745 }));
+    line.renderOrder = 2; return line;
+  }
+  function syncObject(it) {
+    const obj = it.obj;
+    obj.position.set(it.x, 0, it.z);
+    obj.rotation.y = it.r * Math.PI / 2;
+    const r = rectOf(it), y = 0.006, p = it.fp.geometry.attributes.position;
+    [[r.x0, r.z0], [r.x1, r.z0], [r.x1, r.z1], [r.x0, r.z1], [r.x0, r.z0]].forEach(([x, z], i) => p.setXYZ(i, x, y, z));
+    p.needsUpdate = true;
+    renderer.shadowMap.needsUpdate = true;
+  }
+  function addItemObject(it) {
+    const obj = CATALOG[it.type].make(it);
+    obj.userData.itemId = it.id;
+    it.obj = obj; it.fp = makeFootprint();
+    furn.add(obj); scene.add(it.fp);
+    clampItem(it); syncObject(it);
+  }
+  function removeItemObject(it) { furn.remove(it.obj); scene.remove(it.fp); renderer.shadowMap.needsUpdate = true; }
+  items.forEach(addItemObject);
+
+  // Overlap and door-swing checks
+  // Footprint pieces in room coordinates (an L-shaped corner unit has two)
+  function partsOf(it) {
+    const c = CATALOG[it.type];
+    const parts = c.parts || [[-c.w / 2, c.w / 2, -c.d / 2, c.d / 2]];
+    const a = it.r * Math.PI / 2, cs = Math.round(Math.cos(a)), sn = Math.round(Math.sin(a));
+    return parts.map(([x0, x1, z0, z1]) => {
+      const pts = [[x0, z0], [x1, z0], [x1, z1], [x0, z1]].map(([x, z]) => [x * cs + z * sn, -x * sn + z * cs]);
+      const xs = pts.map(p => p[0]), zs = pts.map(p => p[1]);
+      return { x0: it.x + Math.min(...xs), x1: it.x + Math.max(...xs), z0: it.z + Math.min(...zs), z1: it.z + Math.max(...zs) };
+    });
+  }
+  const rectsMeet = (ra, rb, eps = 0.005) => ra.x0 < rb.x1 - eps && rb.x0 < ra.x1 - eps && ra.z0 < rb.z1 - eps && rb.z0 < ra.z1 - eps;
+  function overlaps(a, b) {
+    const pa = partsOf(a), pb = partsOf(b);
+    return pa.some(ra => pb.some(rb => rectsMeet(ra, rb)));
+  }
+  // Door swings: hinge, leaf length, and the quarter (sx, sz) the leaf sweeps.
+  const DOORS = [
+    { x: DOOR.x, z: DOOR.z, r: DOOR.r, sx: 1, sz: 1, name: 'salon kapısının' },
+    { x: 1.2, z: -1.95, r: 0.8, sx: 1, sz: 1, name: 'mutfak kapısının' },
+    { x: -1.2, z: 2.15, r: 0.8, sx: -1, sz: 1, name: 'ebeveyn kapısının' },
+    { x: -1.0, z: D + 0.1, r: 0.8, sx: 1, sz: 1, name: '2. oda kapısının' },
+    { x: 3.38, z: D + 0.15, r: 0.7, sx: -1, sz: 1, name: 'balkon kapısının' },
+    { x: -1.05, z: -2.1, r: 0.9, sx: 1, sz: 1, name: 'giriş kapısının' }
+  ];
+  function doorHits(it) {
+    const hit = [];
+    DOORS.forEach(dr => {
+      const inside = partsOf(it).some(r => {
+        // Clip the piece to the swept quarter, then test the nearest point against the leaf length.
+        const x0 = dr.sx > 0 ? Math.max(r.x0, dr.x) : r.x0, x1 = dr.sx > 0 ? r.x1 : Math.min(r.x1, dr.x);
+        const z0 = dr.sz > 0 ? Math.max(r.z0, dr.z) : r.z0, z1 = dr.sz > 0 ? r.z1 : Math.min(r.z1, dr.z);
+        if (x1 - x0 < 0.005 || z1 - z0 < 0.005) return false;
+        const cx = Math.max(x0, Math.min(dr.x, x1)), cz = Math.max(z0, Math.min(dr.z, z1));
+        return Math.hypot(cx - dr.x, cz - dr.z) < dr.r - 0.005;
+      });
+      if (inside) hit.push(dr.name + ' açılma alanı');
+    });
+    return hit;
+  }
+  const tucks = (a, b) => (a.type === 'chair' && b.type === 'table') || (a.type === 'table' && b.type === 'chair');
+  function problems(it) {
+    const list = [];
+    items.forEach(o => { if (o !== it && !tucks(it, o) && overlaps(it, o)) list.push(CATALOG[o.type].name); });
+    list.push(...doorHits(it));
+    return list;
+  }
+  function refreshFootprints() {
+    items.forEach(it => {
+      const bad = problems(it).length > 0;
+      it.fp.visible = bad || it === selected;
+      it.fp.material.color.copy(bad ? fpColors.bad : fpColors.sel);
+    });
+  }
+
+  // Info chip, legend and buttons
+  const chip = document.getElementById('chip');
+  function setChip() {
+    chip.innerHTML = '';
+    if (!selected) {
+      const b = document.createElement('b'); b.textContent = 'Bir eşyaya dokunun';
+      const s = document.createElement('span'); s.className = 'm'; s.textContent = ' seçip sürükleyebilirsiniz';
+      chip.append(b, s); return;
+    }
+    const c = CATALOG[selected.type], r = rectOf(selected);
+    const b = document.createElement('b'); b.textContent = c.name + (c.fabric ? ', ' + (FAB[selected.color] || FAB.ekru).name.toLocaleLowerCase('tr') : '');
+    const s = document.createElement('span'); s.className = 'm';
+    const room = roomAt(selected.x, selected.z);
+    s.textContent = ` · ${room.name} · ${c.dims} · sol duvardan ${Math.round((r.x0 - room.x0) * 100)} cm, ${room.name === 'Salon' ? 'kapı' : 'üst'} duvarından ${Math.round((r.z0 - room.z0) * 100)} cm`;
+    chip.append(b, s);
+    const p = problems(selected);
+    if (p.length) {
+      const w = document.createElement('div'); w.className = 'warn';
+      w.textContent = 'Çakışıyor: ' + p.join(', ');
+      chip.append(w);
+    }
+  }
+  function renderLegend() {
+    const counts = {}, order = [];
+    items.forEach(it => {
+      const k = it.type + '|' + (CATALOG[it.type].fabric ? (FAB[it.color] ? it.color : 'ekru') : '');
+      if (!counts[k]) order.push(k);
+      counts[k] = (counts[k] || 0) + 1;
+    });
+    order.sort((a, b) => Object.keys(CATALOG).indexOf(a.split('|')[0]) - Object.keys(CATALOG).indexOf(b.split('|')[0]));
+    const ul = document.getElementById('legend'); ul.innerHTML = '';
+    order.forEach(k => {
+      const [type, col] = k.split('|');
+      const li = document.createElement('li');
+      const n = document.createElement('span');
+      n.textContent = (counts[k] > 1 ? counts[k] + ' × ' : '') + CATALOG[type].name + (col ? ', ' + FAB[col].name.toLocaleLowerCase('tr') : '');
+      const d = document.createElement('span'); d.textContent = CATALOG[type].dims;
+      li.append(n, d); ul.append(li);
+    });
+  }
+  const rotBtn = document.getElementById('rot-btn'), delBtn = document.getElementById('del-btn');
+  function select(it) {
+    selected = it;
+    rotBtn.disabled = delBtn.disabled = !it;
+    refreshFootprints(); setChip(); refreshSwatches();
+  }
+  const swatches = document.getElementById('swatches');
+  Object.entries(FAB).forEach(([k, c]) => {
+    const b = document.createElement('button');
+    b.className = 'sw'; b.style.background = c.hex; b.title = c.name;
+    b.setAttribute('aria-label', 'Kumaş rengi: ' + c.name); b.dataset.k = k;
+    b.addEventListener('click', () => {
+      if (!selected || !CATALOG[selected.type].fabric) return;
+      const it = selected;
+      it.color = k; removeItemObject(it); addItemObject(it);
+      select(it); changed();
+    });
+    swatches.append(b);
+  });
+  function refreshSwatches() {
+    const on = !!(selected && CATALOG[selected.type].fabric);
+    swatches.hidden = !on;
+    if (on) swatches.querySelectorAll('.sw').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.k === (FAB[selected.color] ? selected.color : 'ekru'))));
+  }
+  // Undo: a snapshot of the layout before each change, kept for this visit only.
+  const snap = () => JSON.stringify(items.map(({ id, type, x, z, r, color }) => ({ id, type, x, z, r, color })));
+  const history = [];
+  let lastSnap = snap();
+  const undoBtn = document.getElementById('undo-btn');
+  function recordHistory() {
+    const now = snap();
+    if (now === lastSnap) return;
+    history.push(lastSnap); if (history.length > 100) history.shift();
+    lastSnap = now; undoBtn.disabled = false;
+  }
+  function undo() {
+    if (!history.length) return;
+    const selId = selected && selected.id;
+    const prev = history.pop();
+    select(null);
+    items.forEach(removeItemObject);
+    items = JSON.parse(prev);
+    items.forEach(addItemObject);
+    lastSnap = prev; undoBtn.disabled = !history.length;
+    select(items.find(i => i.id === selId) || null);
+    refreshFootprints(); setChip(); renderLegend(); saveState();
+  }
+  undoBtn.addEventListener('click', undo);
+
+  // Layout transfer: copy the layout as text in one copy of the model, paste it into another.
+  const ioDlg = document.getElementById('io-dlg'), ioText = document.getElementById('io-text'), ioMsg = document.getElementById('io-msg');
+  const ioSay = (t, bad) => { ioMsg.textContent = t; ioMsg.classList.toggle('bad', !!bad); };
+  document.getElementById('io-btn').addEventListener('click', () => {
+    ioText.value = JSON.stringify(JSON.parse(layoutJson()));
+    ioSay('');
+    if (ioDlg.showModal) ioDlg.showModal(); else ioDlg.setAttribute('open', '');
+    ioText.focus(); ioText.select();
+  });
+  document.getElementById('io-close').addEventListener('click', () => ioDlg.close ? ioDlg.close() : ioDlg.removeAttribute('open'));
+  document.getElementById('io-copy').addEventListener('click', () => {
+    ioText.focus(); ioText.select();
+    const done = () => ioSay('Kopyalandı.');
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(ioText.value).then(done, () => { try { document.execCommand('copy') ? done() : ioSay('Metin seçili: Ctrl+C ile kopyalayın.'); } catch (e) { ioSay('Metin seçili: Ctrl+C ile kopyalayın.'); } });
+    else { try { document.execCommand('copy') ? done() : ioSay('Metin seçili: Ctrl+C ile kopyalayın.'); } catch (e) { ioSay('Metin seçili: Ctrl+C ile kopyalayın.'); } }
+  });
+  document.getElementById('io-save').addEventListener('click', () => {
+    try {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([ioText.value], { type: 'application/json' }));
+      a.download = 'salon-yerlesim.json'; document.body.append(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+      ioSay('İndirme başlatıldı. Olmadıysa "Kopyala"yı kullanın.');
+    } catch (e) { ioSay('İndirme burada desteklenmiyor; "Kopyala"yı kullanın.', true); }
+  });
+  document.getElementById('io-apply').addEventListener('click', () => {
+    let parsed = null;
+    try { parsed = parseLayout(JSON.parse(ioText.value.trim())); } catch (e) { parsed = null; }
+    if (!parsed) { ioSay('Bu metin bir yerleşim değil. Diğer sürümdeki metnin tamamını yapıştırın.', true); return; }
+    select(null); items.forEach(removeItemObject); items = parsed; items.forEach(addItemObject); changed();
+    if (ioDlg.close) ioDlg.close(); else ioDlg.removeAttribute('open');
+    const chip = document.getElementById('chip');
+    if (chip) chip.innerHTML = '<b>' + parsed.length + ' eşya yerleştirildi.</b> <span class="m">Beğenmezseniz Ctrl+Z ile geri alın.</span>';
+  });
+  ioText.addEventListener('keydown', e => e.stopPropagation());
+
+  // Load the layout saved by the local app's server, so every browser on this computer opens the same one.
+  fetch('api/layout', { cache: 'no-store' }).then(r => {
+    // Only the app's own server.js sends this header; a plain web host (GitHub Pages) does not, so the browser keeps the layout there.
+    if (!r.headers.get('X-Salon-App') || (!r.ok && r.status !== 404)) throw new Error('no app server');
+    serverOk = true;
+    return r.status === 404 ? null : r.json();
+  }).then(data => {
+    if (!serverOk) return;
+    const parsed = data && parseLayout(data);
+    if (!parsed) { saveState(); return; } // nothing on file yet: store the current layout
+    const grew = addBedroomOnce(parsed, 'bohemia-bedroom-added-file');
+    select(null); items.forEach(removeItemObject); items = parsed; items.forEach(addItemObject);
+    lastSnap = snap(); history.length = 0; undoBtn.disabled = true;
+    refreshFootprints(); setChip(); renderLegend();
+    try { localStorage.setItem(STORE_KEY, layoutJson()); } catch (e) { /* ignore */ }
+    if (grew) saveState();
+  }).catch(() => { /* opened without the server: browser storage only */ });
+
+  // Full screen: the real browser full screen when allowed, otherwise the page fills the window
+  const fsBtn = document.getElementById('fs-btn');
+  function setFull(on) {
+    document.body.classList.toggle('full', on);
+    fsBtn.textContent = on ? 'Tam ekrandan çık' : 'Tam ekran';
+    fsBtn.setAttribute('aria-pressed', String(on));
+  }
+  function toggleFull() {
+    const on = !document.body.classList.contains('full');
+    if (on) {
+      setFull(true);
+      const el = document.documentElement;
+      if (el.requestFullscreen && document.fullscreenEnabled) el.requestFullscreen().catch(() => { /* not allowed here: keep the in-page full view */ });
+    } else {
+      setFull(false);
+      if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
+    }
+  }
+  fsBtn.addEventListener('click', toggleFull);
+  document.addEventListener('fullscreenchange', () => { if (!document.fullscreenElement) setFull(false); });
+  window.addEventListener('keydown', e => {
+    if (e.target.closest('select, input, textarea') || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.key === 'f' || e.key === 'F') { toggleFull(); e.preventDefault(); }
+    else if (e.key === 'Escape' && document.body.classList.contains('full') && !document.fullscreenElement && !selected) setFull(false);
+  });
+  window.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === 'z' && !e.target.closest('input, textarea')) {
+      if (drag) return;
+      undo(); e.preventDefault();
+    }
+  });
+  function changed() { refreshFootprints(); setChip(); renderLegend(); saveState(); recordHistory(); }
+
+  const addSel = document.getElementById('add-type');
+  Object.entries(CATALOG).forEach(([k, c]) => {
+    const o = document.createElement('option'); o.value = k; o.textContent = `${c.name} (${c.dims.split(' × ').slice(0, 2).join(' × ')})`;
+    addSel.append(o);
+  });
+  document.getElementById('add-btn').addEventListener('click', () => {
+    const it = { id: nextId++, type: addSel.value, x: controls.target.x, z: controls.target.z, r: 0 };
+    items.push(it); addItemObject(it); select(it); changed();
+  });
+  function rotateSelected() {
+    if (!selected) return;
+    selected.r = (selected.r + 1) % 4; clampItem(selected); syncObject(selected); changed();
+  }
+  function removeSelected() {
+    if (!selected) return;
+    removeItemObject(selected); items = items.filter(i => i !== selected); select(null); changed();
+  }
+  rotBtn.addEventListener('click', rotateSelected);
+  delBtn.addEventListener('click', removeSelected);
+  document.getElementById('reset-btn').addEventListener('click', () => {
+    items.forEach(removeItemObject); items = defaultState(); items.forEach(addItemObject); select(null); changed();
+  });
+
+  // Picking and dragging on the floor
+  const ray = new THREE.Raycaster(), pt = new THREE.Vector2();
+  const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  function setPointer(e) {
+    const r = renderer.domElement.getBoundingClientRect();
+    pt.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+    ray.setFromCamera(pt, camera);
+  }
+  function pickItem(e) {
+    setPointer(e);
+    const hit = ray.intersectObjects(furn.children, true)[0];
+    if (!hit) return null;
+    let o = hit.object; while (o && o.userData.itemId == null) o = o.parent;
+    return o ? items.find(i => i.id === o.userData.itemId) : null;
+  }
+  function floorPoint(e) {
+    setPointer(e);
+    const p = new THREE.Vector3();
+    return ray.ray.intersectPlane(floorPlane, p) ? p : null;
+  }
+  let drag = null, downAt = null;
+  const canvas = renderer.domElement;
+  canvas.addEventListener('pointerdown', e => {
+    downAt = [e.clientX, e.clientY];
+    const it = pickItem(e);
+    if (!it) return;
+    select(it);
+    const p = floorPoint(e);
+    if (!p) return;
+    drag = { it, ox: it.x - p.x, oz: it.z - p.z, moved: false };
+    controls.enabled = false;
+    canvas.setPointerCapture(e.pointerId);
+  }, { capture: true });
+  canvas.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const p = floorPoint(e);
+    if (!p) return;
+    drag.it.x = Math.round((p.x + drag.ox) * 100) / 100;
+    drag.it.z = Math.round((p.z + drag.oz) * 100) / 100;
+    clampItem(drag.it); syncObject(drag.it); drag.moved = true;
+    refreshFootprints(); setChip();
+  });
+  function endDrag(e) {
+    if (drag) {
+      if (drag.moved) changed();
+      drag = null; controls.enabled = true;
+      try { canvas.releasePointerCapture(e.pointerId); } catch (_) { /* already released */ }
+      return;
+    }
+    if (downAt && Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) < 5 && !pickItem(e)) select(null);
+    downAt = null;
+  }
+  canvas.addEventListener('pointerup', endDrag);
+  canvas.addEventListener('pointercancel', endDrag);
+  const held = new Set();
+  const walkKeys = { w: 1, a: 1, s: 1, d: 1 };
+  window.addEventListener('keydown', e => {
+    if (e.target.closest('select, input, textarea') || e.ctrlKey || e.metaKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    if (walkKeys[k]) { held.add(k); e.preventDefault(); }
+    if (e.key === 'Shift') held.add('shift');
+  });
+  window.addEventListener('keyup', e => { held.delete(e.key.toLowerCase()); if (e.key === 'Shift') held.delete('shift'); });
+  window.addEventListener('blur', () => held.clear());
+  window.addEventListener('keydown', e => {
+    if (!selected || e.target.closest('select')) return;
+    const step = e.shiftKey ? 0.1 : 0.01;
+    const moves = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
+    if (e.key === 'r' || e.key === 'R') { rotateSelected(); e.preventDefault(); }
+    else if (e.key === 'Delete' || e.key === 'Backspace') { removeSelected(); e.preventDefault(); }
+    else if (e.key === 'Escape') select(null);
+    else if (moves[e.key]) {
+      selected.x = Math.round((selected.x + moves[e.key][0]) * 100) / 100;
+      selected.z = Math.round((selected.z + moves[e.key][1]) * 100) / 100;
+      clampItem(selected); syncObject(selected); changed(); e.preventDefault();
+    }
+  });
+
+  // Lights
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8a6a50, 0.6));
+  const ceiling = new THREE.PointLight(0xfff0dc, 0.55, 9);
+  ceiling.position.set(W / 2, H - 0.2, D / 2); scene.add(ceiling);
+  const sun = new THREE.DirectionalLight(0xfff4e2, 1.0);
+  sun.position.set(W + 3.5, 3.6, 1.2); sun.target.position.set(W / 2, 0, D / 2);
+  sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024);
+  Object.assign(sun.shadow.camera, { left: -4, right: 4, top: 4, bottom: -4, near: 0.5, far: 14 });
+  sun.shadow.bias = -0.0006;
+  scene.add(sun, sun.target);
+
+  // Camera views
+  function eyeView() {
+    const s = items.find(i => i.type === 'sofa2' || i.type === 'sofa3') || { x: 2.1, z: 0.5, r: 0 };
+    const a = s.r * Math.PI / 2, fx = Math.sin(a), fz = Math.cos(a);
+    return { pos: [s.x - fx * 0.05, 1.1, s.z - fz * 0.05], target: [s.x + fx * 3, 0.95, s.z + fz * 3] };
+  }
+  const views = {
+    persp: () => ({ pos: [-0.9, 4.0, 6.0], target: [2.35, 0.5, 1.8] }),
+    top: () => ({ pos: [2.35, 7.0, 1.81], target: [2.35, 0, 1.8] }),
+    eye: eyeView,
+    house: () => ({ pos: [0.38, 13.5, D - 1.64], target: [0.38, 0, D - 1.65] })
+  };
+  let tween = null;
+  function goTo(key, instant) {
+    const v = views[key]();
+    const to = { pos: new THREE.Vector3(...v.pos), target: new THREE.Vector3(...v.target) };
+    if (instant || reduceMotion) { camera.position.copy(to.pos); controls.target.copy(to.target); controls.update(); tween = null; return; }
+    tween = { t0: performance.now(), fromPos: camera.position.clone(), fromTarget: controls.target.clone(), to };
+  }
+  ['persp', 'top', 'eye', 'house'].forEach(k => document.getElementById('view-' + k).addEventListener('click', () => {
+    ['persp', 'top', 'eye', 'house'].forEach(o => document.getElementById('view-' + o).setAttribute('aria-pressed', String(o === k)));
+    goTo(k);
+  }));
+
+  function resize() {
+    const w = stage.clientWidth, h = stage.clientHeight;
+    renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+  }
+  new ResizeObserver(resize).observe(stage);
+  resize();
+  setThemeColors();
+  select(null); renderLegend();
+  goTo('persp', true);
+
+  const ease = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+  let lastT = 0;
+  const fwd = new THREE.Vector3(), step3 = new THREE.Vector3();
+  function walk(dt) {
+    const f = (held.has('w') ? 1 : 0) - (held.has('s') ? 1 : 0), r = (held.has('d') ? 1 : 0) - (held.has('a') ? 1 : 0);
+    if (!f && !r) return;
+    tween = null;
+    camera.getWorldDirection(fwd); fwd.y = 0;
+    if (fwd.lengthSq() < 1e-4) fwd.set(0, 1, 0).applyQuaternion(camera.quaternion).setY(0); // looking straight down: screen-up is forward
+    fwd.normalize();
+    const speed = held.has('shift') ? 3.0 : 1.4;
+    step3.set(fwd.x * f - fwd.z * r, 0, fwd.z * f + fwd.x * r);
+    if (step3.lengthSq() > 1) step3.normalize();
+    step3.multiplyScalar(speed * dt);
+    camera.position.add(step3); controls.target.add(step3);
+  }
+  function loop(now) {
+    const dt = Math.min(0.05, lastT ? (now - lastT) / 1000 : 0); lastT = now;
+    walk(dt);
+    if (tween) {
+      const k = Math.min(1, (now - tween.t0) / 700), e = ease(k);
+      camera.position.lerpVectors(tween.fromPos, tween.to.pos, e);
+      controls.target.lerpVectors(tween.fromTarget, tween.to.target, e);
+      if (k === 1) tween = null;
+    }
+    controls.update();
+    walls.forEach(w => {
+      const vx = camera.position.x - w.c[0], vz = camera.position.z - w.c[1];
+      w.g.visible = !(vx * w.n[0] + vz * w.n[1] > 0.05);
+    });
+    renderer.render(scene, camera);
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
