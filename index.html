@@ -539,6 +539,24 @@ window.addEventListener('error', e => {
     });
     return g;
   }
+  // Bohemia ayna: 54 × 2,2 × 70 oak capsule on the wall with a bronze mirror set off-centre (hung with its bottom at 1,05 m)
+  function stadium(w, h, cx = 0, cy = 0) {
+    const r = w / 2, k = h / 2 - r, sh = new THREE.Shape();
+    sh.moveTo(cx - r, cy - k); sh.lineTo(cx - r, cy + k);
+    sh.absarc(cx, cy + k, r, Math.PI, 0, true);
+    sh.lineTo(cx + r, cy - k);
+    sh.absarc(cx, cy - k, r, 0, -Math.PI, true);
+    return sh;
+  }
+  const mirrorMat = M(0xc9b9a2, 0.08, { metalness: 0.55 });
+  function ayna() {
+    const g = new THREE.Group(), y0 = 1.05;
+    const back = new THREE.Mesh(new THREE.ExtrudeGeometry(stadium(0.54, 0.7), { depth: 0.016, bevelEnabled: false, curveSegments: 24 }), mat.oak);
+    back.position.set(0, y0 + 0.35, -0.011); g.add(shade(back));
+    const glass = new THREE.Mesh(new THREE.ExtrudeGeometry(stadium(0.44, 0.64, 0.04, 0), { depth: 0.006, bevelEnabled: false, curveSegments: 24 }), mirrorMat);
+    glass.position.set(0, y0 + 0.35, 0.005); g.add(glass);
+    return g;
+  }
   function benchPuf(f) {
     const mat = withFabric(f), g = new THREE.Group();
     [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => g.add(cyl(0.018, 0.013, 0.12, mat.oak, sx * 0.49, 0, sz * 0.17)));
@@ -704,6 +722,7 @@ window.addEventListener('error', e => {
     sifonyer: { name: 'Geniş şifonyer', dims: '98,4 × 46 × 87,5 cm', w: 0.984, d: 0.46, make: () => cabinet(0.984, 0.875, 0.46, 2) },
     dolap4: { name: '4 kapaklı dolap', dims: '187,2 × 63,4 × 228,3 cm', w: 1.872, d: 0.634, make: () => cabinet(1.872, 2.283, 0.634, 4) },
     dresuar: { name: 'Dresuar / makyaj masası', dims: '100 × 46 × 81 cm', w: 1.0, d: 0.46, make: dresuar },
+    ayna: { name: 'Ayna (duvara)', dims: '54 × 2,2 × 70 cm', w: 0.54, d: 0.022, wall: true, make: ayna },
     benchpuf: { name: 'Bench puf', dims: '110 × 45 × 45 cm', w: 1.1, d: 0.45, fabric: true, make: it => benchPuf(it.color) },
     sofa2: { name: "2'li koltuk (yataklı)", dims: '197 × 101 × 76,5 cm', w: 1.97, d: 1.01, fabric: true, make: it => sofa(1.97, it.color) },
     sofa3: { name: "3'lü koltuk (yataklı)", dims: '233 × 101 × 76,5 cm', w: 2.33, d: 1.01, fabric: true, make: it => sofa(2.33, it.color) },
@@ -869,7 +888,8 @@ window.addEventListener('error', e => {
   const tucks = (a, b) => (a.type === 'chair' && b.type === 'table') || (a.type === 'table' && b.type === 'chair');
   function problems(it) {
     const list = [];
-    items.forEach(o => { if (o !== it && !tucks(it, o) && overlaps(it, o)) list.push(CATALOG[o.type].name); });
+    const onWall = x => !!CATALOG[x.type].wall;
+    items.forEach(o => { if (o !== it && !tucks(it, o) && onWall(it) === onWall(o) && overlaps(it, o)) list.push(CATALOG[o.type].name); });
     list.push(...doorHits(it));
     return list;
   }
