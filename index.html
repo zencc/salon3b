@@ -523,6 +523,22 @@ window.addEventListener('error', e => {
     [-0.4, 0.4].forEach(x => g.add(box(0.62, 0.12, 0.4, sheet, x, 0.57, fz + 0.3)));
     return g;
   }
+  // Bohemia dresuar / makyaj masası: 100 × 46 × 81, white drawer box under a 25 mm oak top, tapered oak legs
+  function dresuar() {
+    const g = new THREE.Group(), topY = 0.81 - 0.025, boxH = 0.14, boxY = topY - boxH;
+    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => {
+      const leg = cyl(0.02, 0.011, boxY + 0.01, mat.oak, sx * 0.42, 0, sz * 0.17);
+      leg.rotation.set(-sz * 0.05, 0, sx * 0.06); g.add(leg);
+    });
+    g.add(box(0.96, boxH, 0.42, mat.white, 0, boxY, 0));
+    g.add(box(0.9, 0.004, 0.004, mat.groove, 0, boxY + 0.012, 0.212));
+    g.add(box(1.0, 0.025, 0.46, mat.oak, 0, topY, 0));
+    [-0.31, 0.31].forEach(x => {
+      const knob = new THREE.Mesh(new THREE.SphereGeometry(0.016, 12, 12), mat.oak);
+      knob.position.set(x, boxY + boxH / 2, 0.225); g.add(shade(knob));
+    });
+    return g;
+  }
   function benchPuf(f) {
     const mat = withFabric(f), g = new THREE.Group();
     [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => g.add(cyl(0.018, 0.013, 0.12, mat.oak, sx * 0.49, 0, sz * 0.17)));
@@ -625,6 +641,54 @@ window.addEventListener('error', e => {
     const diag = shelfUnit(0.39, 0.4, h); diag.position.set(a + 0.274, 0, a + 0.274); diag.rotation.y = Math.PI / 4; g.add(diag);
     return g;
   }
+  // 240 × 42 × 50 TV unit on wooden legs: a 180 bench (oak top, open cable niche, three white doors) and a 60 cm box with a white door,
+  // all four modules the same height. A 65" TV hangs on the wall above the bench, 47,5 cm left of three 35 cm cubes:
+  // a white one standing on the box flush with its right side, an oak one up and to the left, a white one on top at the right (top at 155 cm).
+  const benchOak = M(0xcfab80, 0.65), benchOakDark = M(0xa58260, 0.75), cubeOak = M(0xd6b994, 0.65), cubeBack = M(0xa4825e, 0.75);
+  const doorWhite = M(0xf4f3f0, 0.45);
+  function tvBench240(g, cx) {
+    const Dp = 0.42, t = 0.018, legH = 0.08, top = 0.456, leg = x => [-1, 1].forEach(s => g.add(box(0.045, legH, 0.045, benchOak, x, 0, s * (Dp / 2 - 0.035))));
+    // 180 bench
+    [-0.87, -0.3, 0.3, 0.87].forEach(x => leg(cx + x));
+    g.add(box(1.8, t, Dp - 0.01, benchOak, cx, legH, -0.005));
+    for (const s of [-1, 1]) g.add(box(t, top - legH, Dp - 0.01, benchOak, cx + s * (0.9 - t / 2), legH, -0.005));
+    g.add(box(1.8, top - legH, 0.008, benchOakDark, cx, legH, -Dp / 2 + 0.004));
+    [-0.3, 0.3].forEach(x => g.add(box(t, top - legH, Dp - 0.03, benchOak, cx + x, legH, -0.01)));
+    g.add(box(1.8 - 2 * t, t, Dp - 0.03, benchOak, cx, 0.322, -0.01));
+    g.add(box(1.81, 0.044, Dp + 0.01, benchOak, cx, top, 0));
+    [-0.6, 0, 0.6].forEach(x => g.add(box(0.12, 0.05, 0.004, mat.dark, cx + x, 0.37, -Dp / 2 + 0.01))); // cable holes
+    [-0.6, 0, 0.6].forEach(x => g.add(box(0.596, 0.24, 0.018, doorWhite, cx + x, 0.082, Dp / 2 - 0.001)));
+    // 60 box on the right, as tall as the bench
+    const bx = cx + 1.2, bTop = 0.5;
+    [bx - 0.27, bx + 0.27].forEach(x => leg(x));
+    g.add(box(0.6, t, Dp - 0.01, benchOak, bx, legH, -0.005));
+    for (const s of [-1, 1]) g.add(box(t, bTop - t - legH, Dp - 0.01, benchOak, bx + s * (0.3 - t / 2), legH, -0.005));
+    g.add(box(0.6, bTop - t - legH, 0.008, benchOakDark, bx, legH, -Dp / 2 + 0.004));
+    g.add(box(0.6, t, Dp, cubeOak, bx, bTop - t, 0));
+    g.add(box(0.596, 0.398, 0.018, doorWhite, bx, legH + 0.002, Dp / 2 - 0.001));
+  }
+  function tvOnWall(g, cx, y, zb) {
+    g.add(box(0.4, 0.3, 0.03, mat.dark, cx, y + 0.27, zb + 0.015)); // bracket
+    g.add(box(1.45, 0.835, 0.03, mat.dark, cx, y, zb + 0.045));
+    g.add(box(1.43, 0.815, 0.004, mat.screen, cx, y + 0.01, zb + 0.062));
+  }
+  const cubeWhite = M(0xf3f2ef, 0.5), cubeGrey = M(0xbdbcb8, 0.8);
+  function wallCube(g, cx, y, zb, frame = cubeOak, back = cubeBack) {
+    const w = 0.35, h = 0.35, d = 0.25, t = 0.018, zc = zb + d / 2;
+    g.add(box(w, t, d, frame, cx, y, zc));
+    g.add(box(w, t, d, frame, cx, y + h - t, zc));
+    for (const s of [-1, 1]) g.add(box(t, h - 2 * t, d, frame, cx + s * (w / 2 - t / 2), y + t, zc));
+    g.add(box(w - 2 * t, h - 2 * t, 0.006, back, cx, y + t, zb + 0.003));
+  }
+  function tvWall() {
+    const g = new THREE.Group(), bx = -0.3, xl = 0.675, xr = 1.025, y0 = 0.5, zb = -0.21;
+    tvBench240(g, bx);
+    tvOnWall(g, xr - 0.175 - 0.475 - 0.725, 0.57, zb);
+    wallCube(g, xr, y0, zb, cubeWhite, cubeGrey);
+    wallCube(g, xl, y0 + 0.35, zb);
+    wallCube(g, xr, y0 + 0.7, zb, cubeWhite, cubeGrey);
+    return g;
+  }
   function coffeeTable() {
     const g = new THREE.Group();
     g.add(box(1.2, 0.03, 0.6, mat.white, 0, 0.37, 0));
@@ -639,12 +703,14 @@ window.addEventListener('error', e => {
     komodin: { name: 'Komodin', dims: '56 × 46 × 45,7 cm', w: 0.56, d: 0.46, make: () => cabinet(0.56, 0.457, 0.46, 1) },
     sifonyer: { name: 'Geniş şifonyer', dims: '98,4 × 46 × 87,5 cm', w: 0.984, d: 0.46, make: () => cabinet(0.984, 0.875, 0.46, 2) },
     dolap4: { name: '4 kapaklı dolap', dims: '187,2 × 63,4 × 228,3 cm', w: 1.872, d: 0.634, make: () => cabinet(1.872, 2.283, 0.634, 4) },
+    dresuar: { name: 'Dresuar / makyaj masası', dims: '100 × 46 × 81 cm', w: 1.0, d: 0.46, make: dresuar },
     benchpuf: { name: 'Bench puf', dims: '110 × 45 × 45 cm', w: 1.1, d: 0.45, fabric: true, make: it => benchPuf(it.color) },
     sofa2: { name: "2'li koltuk (yataklı)", dims: '197 × 101 × 76,5 cm', w: 1.97, d: 1.01, fabric: true, make: it => sofa(1.97, it.color) },
     sofa3: { name: "3'lü koltuk (yataklı)", dims: '233 × 101 × 76,5 cm', w: 2.33, d: 1.01, fabric: true, make: it => sofa(2.33, it.color) },
     berjer: { name: 'Berjer', dims: '79 × 85 × 90 cm', w: 0.79, d: 0.85, fabric: true, make: it => armchair(it.color) },
     sehpa: { name: 'Orta sehpa', dims: '120 × 60 × 40 cm', w: 1.2, d: 0.6, make: coffeeTable },
     tvset: { name: 'TV ünitesi seti + 65" TV', dims: '300 × 42 × 138 cm', w: 3.0, d: 0.42, make: tvSet },
+    tvduvar: { name: 'TV ünitesi 240 + 3 küp + 65" TV (duvarda)', dims: '240 × 42 × 155 cm', w: 2.4, d: 0.42, make: tvWall },
     kitaplik: { name: 'Kitaplık', dims: '120 × 38,6 × 171,3 cm', w: 1.2, d: 0.386, make: bookcase },
     table: { name: 'Açılır masa', dims: '160–200 × 90 × 76 cm', w: 1.6, d: 0.9, make: diningTable },
     chair: { name: 'Sandalye', dims: '48,5 × 63 × 84,5 cm', w: 0.485, d: 0.55, fabric: true, make: it => chair(it.color) },
@@ -656,7 +722,7 @@ window.addEventListener('error', e => {
   // Default layout: plan rectangle in cm (x from left wall, y from door wall) and rotation (0 faces the TV wall, 1 faces the window, 2 faces the door wall, 3 faces the left wall)
   const DEFAULT = [
     ['sofa2', 112, 0, 309, 101, 0], ['sofa2', 0, 150, 101, 347, 1],
-    ['sehpa', 150, 160, 270, 220, 0], ['tvset', 101, 317, 401, 359, 2],
+    ['sehpa', 150, 160, 270, 220, 0], ['tvduvar', 101, 317, 341, 359, 2],
     ['table', 350, 95, 440, 255, 1],
     ['chair', 302, 122, 350, 170, 1], ['chair', 302, 182, 350, 230, 1],
     ['chair', 371, 50, 419, 95, 0], ['chair', 371, 255, 419, 300, 2]
