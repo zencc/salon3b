@@ -557,6 +557,40 @@ window.addEventListener('error', e => {
     glass.position.set(0, y0 + 0.35, 0.005); g.add(glass);
     return g;
   }
+  // Bohemia wardrobe: flat white doors under an oak top, oak knobs, open base on 150 mm oak legs.
+  // Doors pair up from the outside; an odd middle door carries an arch-topped mirror when mirror is set.
+  function wardrobe(Wd, Ht, Dp, n, mirror) {
+    const g = new THREE.Group(), base = 0.15, topT = 0.025, bodyH = Ht - base - topT, zf = Dp / 2 + 0.003, dw = Wd / n;
+    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => g.add(cyl(0.024, 0.014, base, mat.oak, sx * (Wd / 2 - 0.05), 0, sz * (Dp / 2 - 0.07))));
+    for (let i = 1; i < n; i++) g.add(box(0.02, base, Dp - 0.12, mat.white, -Wd / 2 + dw * i, 0, 0));
+    g.add(box(Wd, 0.018, Dp - 0.04, mat.white, 0, base - 0.018, 0));
+    g.add(box(Wd, bodyH, Dp, mat.white, 0, base, 0));
+    g.add(box(Wd + 0.01, topT, Dp + 0.01, mat.oak, 0, base + bodyH, 0));
+    for (let i = 1; i < n; i++) g.add(box(0.004, bodyH - 0.02, 0.004, mat.groove, -Wd / 2 + dw * i, base + 0.01, zf));
+    const knobY = base + bodyH * 0.47, knob = x => {
+      const k = new THREE.Mesh(new THREE.SphereGeometry(0.017, 12, 12), mat.oak);
+      k.position.set(x, knobY, zf + 0.012); g.add(shade(k));
+    };
+    const mid = n % 2 ? (n - 1) / 2 : -1;
+    for (let i = 0; i + 1 < n; i += 2) {
+      if (i === mid) i++;
+      if (i + 1 >= n || i + 1 === mid) continue;
+      const edge = -Wd / 2 + dw * (i + 1);
+      knob(edge - 0.035); knob(edge + 0.035);
+    }
+    if (mid >= 0) {
+      const cx = -Wd / 2 + dw * (mid + 0.5);
+      knob(cx - dw / 2 + 0.04);
+      if (mirror) {
+        const mw = dw * 0.56, r = mw / 2, y0 = base + 0.2, y1 = base + bodyH - 0.12, sh = new THREE.Shape();
+        sh.moveTo(-r, 0); sh.lineTo(r, 0); sh.lineTo(r, y1 - y0 - r);
+        sh.absarc(0, y1 - y0 - r, r, 0, Math.PI, false); sh.lineTo(-r, 0);
+        const glass = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: 0.004, bevelEnabled: false, curveSegments: 24 }), mirrorMat);
+        glass.position.set(cx, y0, Dp / 2); g.add(glass);
+      }
+    }
+    return g;
+  }
   function benchPuf(f) {
     const mat = withFabric(f), g = new THREE.Group();
     [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => g.add(cyl(0.018, 0.013, 0.12, mat.oak, sx * 0.49, 0, sz * 0.17)));
@@ -720,7 +754,8 @@ window.addEventListener('error', e => {
     karyola: { name: 'Karyola 160 + başlık', dims: '175 × 226 × 100 cm', w: 1.75, d: 2.26, fabric: true, make: it => bed160(it.color) },
     komodin: { name: 'Komodin', dims: '56 × 46 × 45,7 cm', w: 0.56, d: 0.46, make: () => cabinet(0.56, 0.457, 0.46, 1) },
     sifonyer: { name: 'Geniş şifonyer', dims: '98,4 × 46 × 87,5 cm', w: 0.984, d: 0.46, make: () => cabinet(0.984, 0.875, 0.46, 2) },
-    dolap4: { name: '4 kapaklı dolap', dims: '187,2 × 63,4 × 228,3 cm', w: 1.872, d: 0.634, make: () => cabinet(1.872, 2.283, 0.634, 4) },
+    dolap4: { name: '4 kapaklı dolap', dims: '187,2 × 63,4 × 228,3 cm', w: 1.872, d: 0.634, make: () => wardrobe(1.872, 2.283, 0.634, 4) },
+    dolap5: { name: '5 kapaklı dolap (aynalı)', dims: '232,5 × 63,4 × 228,3 cm', w: 2.325, d: 0.634, make: () => wardrobe(2.325, 2.283, 0.634, 5, true) },
     dresuar: { name: 'Dresuar / makyaj masası', dims: '100 × 46 × 81 cm', w: 1.0, d: 0.46, make: dresuar },
     ayna: { name: 'Ayna (duvara)', dims: '54 × 2,2 × 70 cm', w: 0.54, d: 0.022, wall: true, make: ayna },
     benchpuf: { name: 'Bench puf', dims: '110 × 45 × 45 cm', w: 1.1, d: 0.45, fabric: true, make: it => benchPuf(it.color) },
@@ -750,7 +785,7 @@ window.addEventListener('error', e => {
     ['karyola', -394, 318.5, -168, 493.5, 1], ['komodin', -394, 262.5, -348, 318.5, 1], ['komodin', -394, 493.5, -348, 549.5, 1],
     ['sifonyer', -300, 206, -201.6, 252, 0], ['dolap4', -90, 542.6, 97.2, 606, 2]
   ];
-  const BEDROOM_TYPES = ['karyola', 'komodin', 'sifonyer', 'dolap4', 'benchpuf'];
+  const BEDROOM_TYPES = ['karyola', 'komodin', 'sifonyer', 'dolap4', 'dolap5', 'benchpuf'];
   function addBedroomOnce(list, flagKey) {
     try {
       if (localStorage.getItem(flagKey) || list.some(i => BEDROOM_TYPES.includes(i.type))) { localStorage.setItem(flagKey, '1'); return false; }
