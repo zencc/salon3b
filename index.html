@@ -93,6 +93,34 @@ body.full { overflow: hidden; }
 body.full .wrap { position: fixed; inset: 0; z-index: 10; max-width: none; padding: 10px max(10px, env(safe-area-inset-right, 0px)) 10px max(10px, env(safe-area-inset-left, 0px)); background: var(--bg); grid-template-rows: auto 1fr; }
 body.full header, body.full .legend, body.full .note { display: none; }
 body.full .stage { height: auto; min-height: 0; }
+.cat { display: grid; gap: 10px; margin-top: 6px; }
+.cat-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
+.cat h2 { font: 600 20px var(--font-display); margin: 0; }
+.cat-head .sub { flex: 1 1 200px; }
+.cat input[type=search] { font: 13px var(--font-body); color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; min-width: 0; flex: 1 1 180px; }
+.cat-sum { font-size: 13px; color: var(--muted); margin: 0; font-variant-numeric: tabular-nums; }
+.cat-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px; }
+.cat-empty { color: var(--muted); font-size: 14px; margin: 0; }
+.pc { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 12px; display: grid; gap: 4px; align-content: start; min-width: 0; }
+.pc[data-status="begen"] { border-color: #5a9a55; box-shadow: inset 3px 0 0 #5a9a55; }
+.pc[data-status="belki"] { box-shadow: inset 3px 0 0 #c9a13b; }
+.pc[data-status="elendi"] { opacity: 0.55; }
+.pc-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-width: 0; }
+.pc-brand { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; overflow-wrap: anywhere; }
+.pc h3 { margin: 0; font: 600 15px var(--font-body); overflow-wrap: anywhere; }
+.pc p { margin: 0; font-size: 13px; color: var(--muted); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.pc-act { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; align-items: center; }
+.pc-act .btn, .pc-st { padding: 5px 11px; font-size: 12px; }
+.pc a { color: var(--accent); font-size: 13px; }
+.btn.danger { border-color: var(--danger); color: var(--danger); }
+dialog.io { max-height: calc(100dvh - 32px); overflow: auto; }
+.pf { display: grid; gap: 10px; }
+.pf label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+.pf input, .pf select { font: 14px var(--font-body); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; box-sizing: border-box; width: 100%; max-width: none; }
+dialog.io .pf textarea { height: 70px; font: 14px var(--font-body); }
+.pf .dims { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.pf label[hidden] { display: none; }
+body.full .cat { display: none; }
 @media (max-width: 560px) { h1 { font-size: 22px; } .hint { display: none; } .spacer { display: none; } }
 </style>
 </head>
@@ -101,7 +129,7 @@ body.full .stage { height: auto; min-height: 0; }
   <header>
     <div>
       <h1>Bohemia salonu</h1>
-      <p class="sub">Salon: 4,70 × 3,59 m · tavan ≈ 2,6 m · eşyalar evin her odasına taşınabilir</p>
+      <p class="sub">2+1 A&amp;C Blok · net 78,84 m² · salon 24,64 m² · eşyalar evin her odasına taşınabilir</p>
     </div>
     <div class="seg" role="group" aria-label="Bakış">
       <button id="view-persp" aria-pressed="true">3B</button>
@@ -131,20 +159,55 @@ body.full .stage { height: auto; min-height: 0; }
   </div>
 
   <ul class="legend" id="legend"></ul>
+
+  <section class="cat" aria-labelledby="cat-title">
+    <div class="cat-head">
+      <h2 id="cat-title">Mobilya kataloğu</h2>
+      <span class="sub" id="cat-sync" role="status"></span>
+      <button class="btn primary" id="prod-add">Marka ürünü ekle</button>
+    </div>
+    <div class="toolbar">
+      <input id="cat-q" type="search" placeholder="Ara: marka, ürün, not" aria-label="Katalogda ara">
+      <select id="cat-brand" aria-label="Marka"></select>
+      <select id="cat-status" aria-label="Durum"></select>
+    </div>
+    <p class="cat-sum" id="cat-sum"></p>
+    <div class="cat-list" id="cat-list"></div>
+  </section>
   <dialog class="io" id="io-dlg" aria-labelledby="io-title">
     <h2 id="io-title">Yerleşimi taşı</h2>
     <p>Buradaki metin şu anki yerleşimdir. Kopyalayıp diğer sürümde aynı pencereye yapıştırın ve "Uygula"ya basın.</p>
     <textarea id="io-text" spellcheck="false" aria-label="Yerleşim metni"></textarea>
     <div class="row">
       <button class="btn" id="io-copy">Kopyala</button>
-      <button class="btn" id="io-save">Dosya indir</button>
       <button class="btn primary" id="io-apply">Uygula</button>
       <span class="spacer"></span>
       <button class="btn" id="io-close">Kapat</button>
     </div>
     <div class="row"><span class="msg" id="io-msg" role="status"></span></div>
   </dialog>
-  <p class="note">Mobilya ölçüleri kelebek.com ürün sayfalarından, oda ölçüleri yerinde ölçülen değerler. Kapı, pencere, kalorifer ve TV prizinin yeri fotoğraflardan tahmin. Çakışan ya da kapının açılma alanına giren eşyanın tabanı kırmızı görünür. Yerleşiminiz bilgisayardaki uygulamada data/layout.json dosyasına, internetten açıldığında bu tarayıcıya kaydedilir; cihazlar arasında taşımak için "Yerleşim" düğmesini kullanın.</p>
+  <dialog class="io" id="prod-dlg" aria-labelledby="prod-title">
+    <h2 id="prod-title">Marka ürünü ekle</h2>
+    <p>Ölçüleri markanın ürün sayfasından girin. Model, seçtiğiniz türün biçimiyle tam bu ölçülerde çizilir.</p>
+    <form id="prod-form" class="pf">
+      <label>Marka <input name="brand" required maxlength="60" autocomplete="off" list="brand-list"></label>
+      <datalist id="brand-list"></datalist>
+      <label>Ürün adı <input name="name" required maxlength="80" autocomplete="off"></label>
+      <label>Tür <select name="shape"></select></label>
+      <div class="dims">
+        <label>Genişlik (cm) <input name="w" type="number" inputmode="decimal" min="5" max="800" step="0.1" required></label>
+        <label>Derinlik (cm) <input name="d" type="number" inputmode="decimal" min="5" max="800" step="0.1" required></label>
+        <label>Yükseklik (cm) <input name="h" type="number" inputmode="decimal" min="5" max="400" step="0.1" required></label>
+      </div>
+      <label id="pf-fabric">Kumaş rengi <select name="fabric"></select></label>
+      <label>Fiyat (₺, isteğe bağlı) <input name="price" type="number" inputmode="numeric" min="0" step="1"></label>
+      <label>Ürün sayfası (isteğe bağlı) <input name="url" type="url" placeholder="https://" maxlength="500"></label>
+      <label>Not <textarea name="note" maxlength="300"></textarea></label>
+      <div class="row"><button type="submit" class="btn primary">Kaydet</button><span class="spacer"></span><button type="button" class="btn" id="prod-cancel">Vazgeç</button></div>
+      <div class="row"><span class="msg" id="prod-msg" role="status"></span></div>
+    </form>
+  </dialog>
+  <p class="note">Mobilya ölçüleri kelebek.com ürün sayfalarından. Ev, 2+1 A&amp;C Blok daire planından ölçeklendi: oda alanları plandaki net değerler, duvar, kapı ve pencere yerleri plandan yaklaşık; tavan yüksekliği 2,6 m varsayıldı. Mutfak tezgâhı ve banyo eşyaları sabittir. Çakışan ya da kapının açılma alanına giren eşyanın tabanı kırmızı görünür. Yerleşiminiz bilgisayardaki uygulamada data/layout-ac-blok.json dosyasına, internetten açıldığında bu tarayıcıya kaydedilir; cihazlar arasında taşımak için "Yerleşim" düğmesini kullanın.</p>
 </div>
 
 <script>
@@ -167,8 +230,9 @@ window.addEventListener('error', e => {
     stage.innerHTML = '<p class="err">3B görünüm yüklenemedi. Sayfayı yenileyin.</p>';
     return;
   }
-  const W = 4.7, D = 3.59, H = 2.6, T = 0.1;
-  const DOOR = { x: 0.2, z: 0, r: 0.9 };
+  // 2+1 A&C Blok, scaled from the sales plan so each room matches its net area. Salon interior is x 0–W, z 0–D;
+  // kitchen and balkon lie above it (z < 0), baths and ebeveyn to the right, yatak odası top right.
+  const W = 6.1, D = 4.04, H = 2.6, T = 0.1;
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
@@ -197,7 +261,7 @@ window.addEventListener('error', e => {
   controls.enableDamping = true;
   controls.maxPolarAngle = Math.PI / 2 - 0.02;
   controls.minDistance = 0.3;
-  controls.maxDistance = 22;
+  controls.maxDistance = 40;
 
   const fpColors = { sel: new THREE.Color(0xa87745), bad: new THREE.Color(0xd2392b) };
   function setThemeColors() {
@@ -273,53 +337,84 @@ window.addEventListener('error', e => {
   const walls = [];
   function makeWall(n, c) { const g = new THREE.Group(); scene.add(g); walls.push({ g, n, c }); return g; }
 
-  const gTop = makeWall([0, -1], [W / 2, 0]);
-  wallBox(gTop, 0.2 + T, H, T, (0.2 - T) / 2, 0, -T / 2);
-  wallBox(gTop, 0.9, H - 2.05, T, 0.65, 2.05, -T / 2);
-  wallBox(gTop, W - 1.1 + T, H, T, (1.1 + W + T) / 2, 0, -T / 2);
-  wallBox(gTop, W - 1.1, 0.07, 0.015, (1.1 + W) / 2, 0, 0.0075, mat.base);
-  wallBox(gTop, 0.05, 2.1, 0.02, 0.175, 0, 0.01, mat.trim);
-  wallBox(gTop, 0.05, 2.1, 0.02, 1.125, 0, 0.01, mat.trim);
-  wallBox(gTop, 1.0, 0.05, 0.02, 0.65, 2.05, 0.01, mat.trim);
+  // Walls of the flat, from the plan. Each is a rectangle [x0, x1, z0, z1]; outside walls carry a normal and hide when the camera is outside them.
+  // Openings along a wall: [from, to, kind], kind 'door' (header at 2,05 m), 'pass' (open arch, header at 2,2 m) or 'win' (sill 0,9 m, top 2,2 m).
+  const sill = M(0xcfcac2, 0.7);
+  function wall(x0, x1, z0, z1, n, ops = [], h = H) {
+    const alongX = x1 - x0 >= z1 - z0, a1 = alongX ? x1 : z1, th = alongX ? z1 - z0 : x1 - x0;
+    const g = n ? makeWall(n, [(x0 + x1) / 2, (z0 + z1) / 2]) : scene;
+    const piece = (s0, s1, y0, y1, m = mat.wall, k = 1) => {
+      if (s1 - s0 < 0.001 || y1 - y0 < 0.001) return;
+      const c = (s0 + s1) / 2, t = th * k;
+      const b = alongX ? box(s1 - s0, y1 - y0, t, m, c, y0, (z0 + z1) / 2) : box(t, y1 - y0, s1 - s0, m, (x0 + x1) / 2, y0, c);
+      if (m === mat.glass) b.castShadow = false;
+      g.add(b);
+    };
+    let s = alongX ? x0 : z0;
+    ops.slice().sort((p, q) => p[0] - q[0]).forEach(([o0, o1, kind]) => {
+      piece(s, o0, 0, h);
+      if (kind === 'win') {
+        const mid = (o0 + o1) / 2;
+        piece(o0, o1, 0, 0.9); piece(o0, o1, 2.2, h); piece(o0, o1, 0.9, 2.2, mat.glass, 0.4);
+        piece(o0, o1, 0.9, 0.95, mat.trim, 1.2); piece(o0, o1, 2.15, 2.2, mat.trim, 1.2);
+        [o0, mid - 0.025, o1 - 0.05].forEach(p => piece(p, p + 0.05, 0.9, 2.2, mat.trim, 1.2));
+      } else {
+        const top = kind === 'pass' ? 2.2 : 2.05;
+        piece(o0, o1, top, h);
+        piece(o0, o0 + 0.05, 0, top, mat.trim, 1.3); piece(o1 - 0.05, o1, 0, top, mat.trim, 1.3);
+        piece(o0, o1, top - 0.05, top, mat.trim, 1.3);
+        piece(o0, o1, 0, 0.008, sill, 1.02);
+      }
+      s = o1;
+    });
+    piece(s, a1, 0, h);
+  }
+  // Outside walls
+  wall(-T, 0, -T, D + T, [-1, 0], [[1.1, 2.7, 'win']]);                      // salon window
+  wall(-T, 12.4, D, D + T, [0, 1]);
+  wall(12.3, 12.4, -3.4, D + T, [1, 0], [[-2.4, -1.1, 'win'], [1.2, 2.8, 'win']]); // yatak odası and ebeveyn windows
+  wall(9.1, 12.4, -3.4, -3.3, [0, -1]);
+  wall(9.1, 9.2, -3.3, -1.5, [-1, 0]);
+  wall(4.5, 9.2, -1.6, -1.5, [0, -1], [[5.7, 6.6, 'door']]);                  // entrance from the stair landing
+  wall(4.5, 4.6, -2.66, -1.6, [1, 0]);
+  wall(0.5, 4.6, -2.66, -2.56, [0, -1], [[1.8, 3.0, 'win']]);                // kitchen window
+  // Balcony parapet
+  wall(-1.5, 0.5, -2.66, -2.56, [0, -1], [], 1.0);
+  wall(-1.5, -1.4, -2.56, 0, [-1, 0], [], 1.0);
+  wall(-1.4, -T, -T, 0, [0, 1], [], 1.0);
+  // Inside walls
+  wall(0.5, 0.6, -2.56, -T, null, [[-1.9, -1.1, 'door']]);                   // kitchen–balkon
+  wall(-T, 6.2, -T, 0, null, [[4.7, 6.0, 'pass']]);                          // salon–antre arch
+  wall(4.5, 4.6, -1.5, -T, null, [[-1.3, -0.5, 'door']]);                    // kitchen door
+  wall(6.1, 6.2, 0, D);
+  wall(6.2, 12.3, 0, T, null, [[6.9, 7.6, 'door'], [8.35, 9.1, 'door']]);    // banyo and ebeveyn doors
+  wall(9.1, 9.2, -1.5, 0, null, [[-1.35, -0.55, 'door']]);                   // yatak odası door
+  wall(6.2, 8.2, 2.65, 2.75);
+  wall(8.2, 8.3, T, D, null, [[3.0, 3.65, 'door']]);                          // eb. banyo door
 
-  const gBot = makeWall([0, 1], [W / 2, D]);
-  wallBox(gBot, W + 2 * T, H, T, W / 2, 0, D + T / 2);
-  wallBox(gBot, W, 0.07, 0.015, W / 2, 0, D - 0.0075, mat.base);
-  wallBox(gBot, 0.24, 0.08, 0.02, W - 0.9, 0.27, D - 0.01, mat.trim); // TV socket
+  // Door leaves, drawn open, with their swing on the floor: hinge point, closed direction c, open direction o, leaf length.
+  const DOOR_SWINGS = [];
+  const swingMat = new THREE.LineBasicMaterial({ color: 0x8a8a84, transparent: true, opacity: 0.6 });
+  function door(name, hx, hz, c, o, L) {
+    scene.add(box(o[0] ? L : 0.04, 2.03, o[1] ? L : 0.04, mat.trim, hx + o[0] * L / 2 + c[0] * 0.025, 0, hz + o[1] * L / 2 + c[1] * 0.025));
+    const pts = [];
+    for (let i = 0; i <= 32; i++) {
+      const a = i / 32 * Math.PI / 2;
+      pts.push(new THREE.Vector3(hx + L * (Math.cos(a) * c[0] + Math.sin(a) * o[0]), 0.006, hz + L * (Math.cos(a) * c[1] + Math.sin(a) * o[1])));
+    }
+    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), swingMat));
+    DOOR_SWINGS.push({ x: hx, z: hz, r: L, sx: Math.sign(c[0] + o[0]), sz: Math.sign(c[1] + o[1]), name });
+  }
+  door('giriş kapısının', 6.6, -1.5, [-1, 0], [0, 1], 0.9);
+  door('mutfak kapısının', 4.5, -1.3, [0, 1], [-1, 0], 0.8);
+  door('balkon kapısının', 0.6, -1.9, [0, 1], [1, 0], 0.8);
+  door('banyo kapısının', 6.9, T, [1, 0], [0, 1], 0.7);
+  door('ebeveyn kapısının', 9.1, T, [-1, 0], [0, 1], 0.75);
+  door('yatak odası kapısının', 9.2, -1.35, [0, 1], [1, 0], 0.8);
+  door('ebeveyn banyosu kapısının', 8.2, 3.0, [0, 1], [-1, 0], 0.65);
 
-  const gLeft = makeWall([-1, 0], [0, D / 2]);
-  wallBox(gLeft, T, H, D, -T / 2, 0, D / 2);
-  wallBox(gLeft, 0.015, 0.07, D, 0.0075, 0, D / 2, mat.base);
-
-  const gRight = makeWall([1, 0], [W, D / 2]);
-  const wz0 = 0.6, wz1 = 2.55, wy0 = 0.9, wy1 = 2.3;
-  wallBox(gRight, T, H, wz0, W + T / 2, 0, wz0 / 2);
-  wallBox(gRight, T, H, D - wz1, W + T / 2, 0, (wz1 + D) / 2);
-  wallBox(gRight, T, wy0, wz1 - wz0, W + T / 2, 0, (wz0 + wz1) / 2);
-  wallBox(gRight, T, H - wy1, wz1 - wz0, W + T / 2, wy1, (wz0 + wz1) / 2);
-  wallBox(gRight, T * 0.4, wy1 - wy0, wz1 - wz0, W + T / 2, wy0, (wz0 + wz1) / 2, mat.glass);
-  [wz0, wz0 + 0.65, wz0 + 1.3, wz1].forEach(z => wallBox(gRight, T + 0.02, wy1 - wy0, 0.06, W + T / 2, wy0, z, mat.trim));
-  wallBox(gRight, T + 0.02, 0.06, wz1 - wz0, W + T / 2, wy0, (wz0 + wz1) / 2, mat.trim);
-  wallBox(gRight, T + 0.02, 0.06, wz1 - wz0, W + T / 2, wy1 - 0.06, (wz0 + wz1) / 2, mat.trim);
-  wallBox(gRight, 0.18, 0.03, wz1 - wz0 + 0.1, W - 0.04, wy0 - 0.03, (wz0 + wz1) / 2, mat.trim);
-  for (let z = 1.05; z <= 1.95; z += 0.075) wallBox(gRight, 0.08, 0.6, 0.05, W - 0.07, 0.15, z, mat.radiator);
-  wallBox(gRight, 0.015, 0.07, wz0, W - 0.0075, 0, wz0 / 2, mat.base);
-
-  // Door, open 90° toward the left wall
-  scene.add(box(0.04, 2.03, 0.88, mat.trim, 0.22, 0, 0.46));
-  scene.add(box(0.02, 0.02, 0.12, mat.dark, 0.25, 1.0, 0.82));
-  // Door swing on the floor
-  const swing = new THREE.Mesh(new THREE.RingGeometry(DOOR.r - 0.008, DOOR.r, 48, 1, 0, Math.PI / 2),
-    new THREE.MeshBasicMaterial({ color: 0x8a8a84, transparent: true, opacity: 0.6 }));
-  swing.rotation.x = -Math.PI / 2; swing.rotation.z = -Math.PI / 2; swing.position.set(DOOR.x, 0.004, 0);
-  scene.add(swing);
-
-  // Rest of the flat, full-height walls.
-  // Measured: mutfak 2,00 × 3,50, ebeveyn 2,74 × 4,00, 2. oda 4,48 × 2,37, banyo 2,75 × 1,98.
-  // Not measured (taken from the sketch): hol, balkon; WC is what is left beside the banyo; its west half is the building air shaft, left out of the model. Doors between the other rooms are unknown, so none are drawn.
-  // Drawn from the sketch with the kitchen side at z > D, then mirrored: kitchen and hall lie behind the door wall (z < 0), 2. oda and balkon behind the TV wall.
+  // Rooms furniture can stand in; the salon first, the rest are added below.
   const PLACES = [{ name: 'Salon', x0: 0, x1: W, z0: 0, z1: D }];
-  const flipZ = r => [r[0], r[1], D - r[3], D - r[2]];
   function tileTexture(rw, rd, size, base, grout) {
     const c = document.createElement('canvas'); c.width = c.height = 128;
     const g = c.getContext('2d');
@@ -360,114 +455,44 @@ window.addEventListener('error', e => {
     const f = new THREE.Mesh(new THREE.PlaneGeometry(rw, rd), new THREE.MeshStandardMaterial({ map, roughness: 0.7 }));
     f.rotation.x = -Math.PI / 2; f.position.set((x0 + x1) / 2, 0, (z0 + z1) / 2); f.receiveShadow = true; scene.add(f);
   }
-  // [name, size text, floor, rectangles [x0, x1, z0, z1]] in salon coordinates (salon is x 0–4.7, z 0–3.59)
-  [['Mutfak', '2,00 × 3,50 m', 'tile', [[1.2, 4.7, D + 0.1, D + 2.1]]],
-   ['Hol', 'ölçülmedi', 'tile', [[-1.1, 1.1, D + 0.1, D + 2.1], [-1.1, -0.1, 0, D + 0.1]]],
-   ['2. oda', '4,48 × 2,37 m', 'parke', [[-1.1, 3.38, -2.47, -0.1]]],
-   ['Balkon', 'ölçülmedi', 'balkon', [[3.48, W, -2.47, -0.1]]],
-   ['Ebeveyn', '2,74 × 4,00 m', 'parke', [[-3.94, -1.2, -2.47, 1.53]]],
-   ['Banyo', '2,75 × 1,98 m', 'tile', [[-3.94, -1.2, 1.63, 3.61]]],
-   ['WC', '≈1,37 × 1,98 m', 'tile', [[-2.57, -1.2, 3.71, D + 2.1]]]
-  ].forEach(([name, dims, kind, rects0]) => {
-    const rects = rects0.map(flipZ);
-    rects.forEach(r => { roomFloor(r[0], r[1], r[2], r[3], kind); PLACES.push({ name, x0: r[0], x1: r[1], z0: r[2], z1: r[3] }); });
-    const [x0, x1, z0, z1] = rects[0];
-    roomLabel(name, dims, (x0 + x1) / 2, (z0 + z1) / 2, x1 - x0 - 0.15);
+  // Rooms: [name, plan net area, floor, [x0, x1, z0, z1]]. Sizes are scaled from the plan.
+  [['Mutfak', '9,59 m²', 'tile', [0.6, 4.5, -2.56, -T]],
+   ['Balkon', '4,69 m²', 'tile', [-1.4, 0.5, -2.56, -T]],
+   ['Antre', '3,42 m²', 'tile', [4.6, 6.9, -1.5, 0]],
+   ['Hol', '2,47 m²', 'tile', [6.9, 9.1, -1.5, 0]],
+   ['Banyo', '5,10 m²', 'tile', [6.2, 8.2, T, 2.65]],
+   ['Eb. banyo', '2,82 m²', 'tile', [6.2, 8.2, 2.75, D]],
+   ['Ebeveyn', '15,87 m²', 'parke', [8.3, 12.3, T, D]],
+   ['Yatak odası', '10,24 m²', 'parke', [9.2, 12.3, -3.3, 0]]
+  ].forEach(([name, dims, kind, r]) => {
+    roomFloor(r[0], r[1], r[2], r[3], kind);
+    PLACES.push({ name, x0: r[0], x1: r[1], z0: r[2], z1: r[3] });
+    roomLabel(name, dims, (r[0] + r[1]) / 2, (r[2] + r[3]) / 2, r[1] - r[0] - 0.15);
   });
-  const ZT = D + 2.1, ZB = -2.47;
-  // Full-height walls. Outside walls carry a normal and hide when the camera is outside them, like the salon's.
-  [[-2.67, -1.05, ZT, ZT + T, [0, -1]], [-0.15, W + T, ZT, ZT + T, [0, -1]], [-1.05, -0.15, ZT, ZT + T, [0, -1], 2.05], [W, W + T, D + T, D + 1.1, [1, 0]], [W, W + T, D + 2.0, ZT, [1, 0]], [W, W + T, D + 1.1, D + 2.0, [1, 0], 2.1], [W, W + T, D + 1.1, D + 2.0, [1, 0], 0, 0.9], [W, W + T, -1.97, -T, [1, 0], 0, 0.9], [W, W + T, -1.97, -T, [1, 0], 2.2], [-4.04, -3.8, ZB - T, ZB, [0, 1]], [-2.6, 3.48, ZB - T, ZB, [0, 1]], [3.48, W - 0.5, ZB - T, ZB, [0, 1], 0, 0.9], [3.48, W - 0.5, ZB - T, ZB, [0, 1], 2.2], [-3.8, -2.6, ZB - T, ZB, [0, 1], 2.1], [-3.8, -2.6, ZB - T, ZB, [0, 1], 0, 0.9],
-   [-4.04, -3.94, ZB, 1.53, [-1, 0]], [-4.04, -3.94, 1.53, 3.61, [-1, 0]],
-   [-3.94, -1.1, 1.53, 1.63], [-4.04, -2.57, 3.61, 3.71, [0, -1]], [-2.57, -1.2, 3.61, 3.71], [-2.67, -2.57, 3.71, ZT, [-1, 0]], [-1.2, -1.1, ZB, 0.64], [-1.2, -1.1, 1.44, 2.34], [-1.2, -1.1, 3.04, D + 1.05], [-1.2, -1.1, D + 1.75, ZT],
-   [3.38, 3.48, ZB, -1.7], [3.38, 3.48, -0.15, -T], [3.38, 3.48, -1.7, -0.15, null, 2.1], [-1.1, -1.0, -T, 0], [-0.2, -T, -T, 0], [1.1, 1.2, D + T, D + 1.15], [1.1, 1.2, D + 1.95, ZT]
-  ].forEach(w => {
-    const [x0, x1, z0, z1] = flipZ(w), cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
-    const g = w[4] ? makeWall(w[4], [cx, cz]) : scene;
-    const y0 = w[5] || 0, y1 = w[6] || H;
-    g.add(box(x1 - x0, y1 - y0, z1 - z0, mat.wall, cx, y0, cz));
-  });
-  // Doors seen in the listing photos (model coordinates). Kitchen door: on the hall-side short wall, near the outside wall,
-  // hinged on that side and opening into the kitchen against the outside wall. WC door straight across the hall; its swing is unknown.
-  function doorway(x, z0, z1) {
-    scene.add(box(T, H - 2.05, z1 - z0, mat.wall, x, 2.05, (z0 + z1) / 2));
-    [z0, z1].forEach(z => scene.add(box(T + 0.03, 2.1, 0.05, mat.trim, x, 0, z + (z === z0 ? 0.025 : -0.025))));
-    scene.add(box(T + 0.03, 0.05, z1 - z0, mat.trim, x, 2.05, (z0 + z1) / 2));
+  roomFloor(4.6, 9.1, -3.4, -1.6, 'void');
+  roomLabel('Merdiven', 'ortak alan', 6.85, -2.5, 1.5);
+
+  // Built-in pieces from the plan (kitchen counter, bathroom fixtures). Furniture placed over them is flagged.
+  const FIXTURES = [];
+  const white = M(0xf7f7f4, 0.35), counterTop = M(0x55524d, 0.4), steel = M(0xc9ccce, 0.35, { metalness: 0.4 });
+  function fixture(name, x0, x1, z0, z1, h, m) {
+    FIXTURES.push({ name, x0, x1, z0, z1 });
+    scene.add(box(x1 - x0, h, z1 - z0, m, (x0 + x1) / 2, 0, (z0 + z1) / 2));
   }
-  doorway(1.15, -1.95, -1.15);
-  scene.add(box(0.8, 2.03, 0.04, mat.trim, 1.6, 0, -1.91));
-  const kSwing = new THREE.Mesh(new THREE.RingGeometry(0.792, 0.8, 48, 1, -Math.PI / 2, Math.PI / 2),
-    new THREE.MeshBasicMaterial({ color: 0x8a8a84, transparent: true, opacity: 0.6 }));
-  kSwing.rotation.x = -Math.PI / 2; kSwing.position.set(1.2, 0.004, -1.95); scene.add(kSwing);
-  doorway(-1.15, -1.75, -1.05);
-  function doorwayX(z, x0, x1) {
-    scene.add(box(x1 - x0, H - 2.05, T, mat.wall, (x0 + x1) / 2, 2.05, z));
-    [x0 + 0.025, x1 - 0.025].forEach(x => scene.add(box(0.05, 2.1, T + 0.03, mat.trim, x, 0, z)));
-    scene.add(box(x1 - x0, 0.05, T + 0.03, mat.trim, (x0 + x1) / 2, 2.05, z));
-  }
-  function swingArc(r, x, z, start) {
-    const m = new THREE.Mesh(new THREE.RingGeometry(r - 0.008, r, 48, 1, start, Math.PI / 2),
-      new THREE.MeshBasicMaterial({ color: 0x8a8a84, transparent: true, opacity: 0.6 }));
-    m.rotation.x = -Math.PI / 2; m.position.set(x, 0.004, z); scene.add(m);
-  }
-  // From the corridor photo: corridor runs from an arch at the hall to the 2. oda door; banyo and ebeveyn doors on its west side.
-  scene.add(box(1.0, H - 2.2, 0.12, mat.trim, -0.6, 2.2, -0.05));
-  // Banyo door near the arch; swing not visible, drawn closed.
-  doorway(-1.15, 0.55, 1.25);
-  scene.add(box(0.04, 2.03, 0.66, mat.trim, -1.15, 0, 0.9));
-  // Ebeveyn door at the north end of its long wall, hinged at that corner, opening into the room against the banyo wall.
-  doorway(-1.15, 2.15, 2.95);
-  scene.add(box(0.8, 2.03, 0.04, mat.trim, -1.6, 0, 2.13));
-  swingArc(0.8, -1.2, 2.15, -Math.PI);
-  // 2. oda door straight ahead at the end of the corridor, hinged on the west side, opening into the room.
-  doorwayX(D + 0.05, -1.0, -0.2);
-  scene.add(box(0.04, 2.03, 0.8, mat.trim, -0.98, 0, D + 0.5));
-  swingArc(0.8, -1.0, D + 0.1, -Math.PI / 2);
-  // From the 2. oda photo: balcony door at the north end of the wall to the balkon, window beside it with a radiator below.
-  scene.add(box(T, 0.9, 0.85, mat.wall, 3.43, 0, D + 1.275));
-  scene.add(box(T * 0.4, 1.2, 0.85, mat.glass, 3.43, 0.9, D + 1.275));
-  [D + 0.85, D + 1.275, D + 1.7].forEach(z => scene.add(box(T + 0.02, 1.2, 0.05, mat.trim, 3.43, 0.9, z)));
-  [0.9, 2.05].forEach(y => scene.add(box(T + 0.02, 0.05, 0.85, mat.trim, 3.43, y, D + 1.275)));
-  [D + 0.175, D + 0.825].forEach(z => scene.add(box(T + 0.02, 2.1, 0.05, mat.trim, 3.43, 0, z)));
-  scene.add(box(T + 0.02, 0.05, 0.7, mat.trim, 3.43, 2.05, D + 0.5));
-  scene.add(box(0.66, 2.0, 0.03, mat.glass, 3.05, 0.02, D + 0.17));
-  [2.72, 3.38].forEach(x => scene.add(box(0.05, 2.03, 0.05, mat.trim, x - (x > 3 ? 0.025 : -0.025), 0, D + 0.17)));
-  swingArc(0.7, 3.38, D + 0.15, -Math.PI);
-  for (let z = D + 1.0; z <= D + 1.55; z += 0.075) scene.add(box(0.08, 0.6, 0.05, mat.radiator, 3.31, 0.15, z));
-  // Ebeveyn window (south wall, near the west corner) with a radiator below.
-  const ewz = D + 2.47 + T / 2;
-  scene.add(box(1.2, 1.2, T * 0.4, mat.glass, -3.2, 0.9, ewz));
-  [-3.8, -3.2, -2.6].forEach(x => scene.add(box(0.05, 1.2, T + 0.02, mat.trim, x, 0.9, ewz)));
-  [0.9, 2.05].forEach(y => scene.add(box(1.2, 0.05, T + 0.02, mat.trim, -3.2, y, ewz)));
-  for (let x = -3.5; x <= -2.95; x += 0.075) scene.add(box(0.05, 0.6, 0.08, mat.radiator, x, 0.15, ewz - T / 2 - 0.07));
-  // Kitchen window (end wall, near the north corner); radiator and combi boiler on the north wall beside it.
-  scene.add(box(T * 0.4, 1.2, 0.9, mat.glass, W + T / 2, 0.9, -1.55));
-  [-2.0, -1.55, -1.1].forEach(z => scene.add(box(T + 0.02, 1.2, 0.05, mat.trim, W + T / 2, 0.9, z)));
-  [0.9, 2.05].forEach(y => scene.add(box(T + 0.02, 0.05, 0.9, mat.trim, W + T / 2, y, -1.55)));
-  for (let x = 4.25; x <= 4.6; x += 0.075) scene.add(box(0.05, 0.6, 0.08, mat.radiator, x, 0.15, -2.03));
-  scene.add(box(0.4, 0.7, 0.28, mat.radiator, 4.3, 1.3, -1.95));
-  // Balkon (from its photos): enclosed, parapet with windows above on both outside walls.
-  scene.add(box(T * 0.4, 1.3, 1.87, mat.glass, W + T / 2, 0.9, D + 1.035));
-  [D + 0.125, D + 0.75, D + 1.35, D + 1.945].forEach(z => scene.add(box(T + 0.02, 1.3, 0.05, mat.trim, W + T / 2, 0.9, z)));
-  [0.9, 2.15].forEach(y => scene.add(box(T + 0.02, 0.05, 1.87, mat.trim, W + T / 2, y, D + 1.035)));
-  const bz = D + 2.47 + T / 2;
-  scene.add(box(0.72, 1.3, T * 0.4, mat.glass, 3.84, 0.9, bz));
-  [3.505, 4.175].forEach(x => scene.add(box(0.05, 1.3, T + 0.02, mat.trim, x, 0.9, bz)));
-  [0.9, 2.15].forEach(y => scene.add(box(0.72, 0.05, T + 0.02, mat.trim, 3.84, y, bz)));
-  // The angled corner piece
-  {
-    const c = 0.5, L = c * Math.SQRT2 + 0.08, o = T / 2 / Math.SQRT2;
-    const cx = W - c / 2 + o, cz = D + 2.47 - c / 2 + o;
-    const g = makeWall([Math.SQRT1_2, Math.SQRT1_2], [cx, cz]);
-    const piece = (w, h, d, m, y) => { const b = box(w, h, d, m, cx, y, cz); b.rotation.y = Math.PI / 4; return b; };
-    g.add(piece(L, 0.9, T, mat.wall, 0), piece(L, H - 2.2, T, mat.wall, 2.2));
-    scene.add(piece(L - 0.08, 1.3, T * 0.4, mat.glass, 0.9), piece(L - 0.08, 0.05, T + 0.02, mat.trim, 0.9), piece(L - 0.08, 0.05, T + 0.02, mat.trim, 2.15));
-  }
-  // Entrance door (from the hall photo): in the hall's corner by the WC wall, hinged on that side, opening into the hall.
-  scene.add(box(0.9, 2.03, 0.05, mat.trim, -0.6, 0, -2.125));
-  const eSwing = new THREE.Mesh(new THREE.RingGeometry(0.892, 0.9, 48, 1, -Math.PI / 2, Math.PI / 2),
-    new THREE.MeshBasicMaterial({ color: 0x8a8a84, transparent: true, opacity: 0.6 }));
-  eSwing.rotation.x = -Math.PI / 2; eSwing.position.set(-1.05, 0.004, -2.1); scene.add(eSwing);
-  scene.add(box(0.04, 2.03, 0.66, mat.trim, -1.15, 0, -1.4));
+  fixture('mutfak tezgâhı', 0.6, 3.85, -2.56, -1.96, 0.86, mat.white);
+  scene.add(box(3.25, 0.04, 0.62, counterTop, 2.225, 0.86, -2.25));
+  scene.add(box(0.6, 0.01, 0.45, mat.dark, 3.2, 0.9, -2.27));
+  scene.add(box(0.7, 0.01, 0.42, steel, 2.4, 0.9, -2.28));
+  [[0.6, 1.8], [3.0, 3.85]].forEach(([a, b]) => scene.add(box(b - a, 0.7, 0.35, mat.white, (a + b) / 2, 1.45, -2.385)));
+  fixture('buzdolabı', 3.85, 4.5, -2.56, -1.91, 1.85, steel);
+  fixture('küvet', 6.2, 6.9, 0.85, 2.55, 0.55, white);
+  fixture('lavabo', 7.75, 8.2, 0.55, 1.15, 0.85, white);
+  fixture('klozet', 7.65, 8.2, 1.75, 2.13, 0.4, white);
+  scene.add(box(0.18, 0.4, 0.38, white, 8.11, 0.4, 1.94));
+  fixture('duş', 6.2, 7.0, 3.24, D, 0.05, white);
+  const showerGlass = box(0.8, 1.9, 0.02, mat.glass, 6.6, 0.05, 3.25); showerGlass.castShadow = false; scene.add(showerGlass);
+  fixture('klozet', 7.15, 7.53, 3.49, D, 0.4, white);
+  scene.add(box(0.38, 0.4, 0.18, white, 7.34, 0.4, 3.95));
 
   // Furniture builders. Local front faces +z, width along x.
   function sofa(Wd, f) {
@@ -772,36 +797,91 @@ window.addEventListener('error', e => {
     billy: { name: 'Köşe kitaplık (meşe)', dims: '96,3/96,3 × 28 × 202 cm', w: 0.963, d: 0.963, make: billyCorner,
       parts: [[-0.4815, 0.4815, -0.4815, -0.2015], [-0.4815, -0.2015, -0.2015, 0.4815], [-0.2015, 0.07, -0.2015, 0.07]] }
   };
+  Object.keys(CATALOG).forEach(k => { CATALOG[k].brand = k === 'billy' ? 'Diğer' : 'Kelebek Bohemia'; });
 
-  // Default layout: plan rectangle in cm (x from left wall, y from door wall) and rotation (0 faces the TV wall, 1 faces the window, 2 faces the door wall, 3 faces the left wall)
-  const DEFAULT = [
-    ['sofa2', 112, 0, 309, 101, 0], ['sofa2', 0, 150, 101, 347, 1],
-    ['sehpa', 150, 160, 270, 220, 0], ['tvduvar', 101, 317, 341, 359, 2],
-    ['table', 350, 95, 440, 255, 1],
-    ['chair', 302, 122, 350, 170, 1], ['chair', 302, 182, 350, 230, 1],
-    ['chair', 371, 50, 419, 95, 0], ['chair', 371, 255, 419, 300, 2]
-  ];
-  const BEDROOM_DEFAULT = [
-    ['karyola', -394, 318.5, -168, 493.5, 1], ['komodin', -394, 262.5, -348, 318.5, 1], ['komodin', -394, 493.5, -348, 549.5, 1],
-    ['sifonyer', -300, 206, -201.6, 252, 0], ['dolap4', -90, 542.6, 97.2, 606, 2]
-  ];
-  const BEDROOM_TYPES = ['karyola', 'komodin', 'sifonyer', 'dolap4', 'dolap5', 'benchpuf'];
-  function addBedroomOnce(list, flagKey) {
-    try {
-      if (localStorage.getItem(flagKey) || list.some(i => BEDROOM_TYPES.includes(i.type))) { localStorage.setItem(flagKey, '1'); return false; }
-      BEDROOM_DEFAULT.forEach(([type, x0, y0, x1, y1, r]) => list.push({ id: nextId++, type, x: (x0 + x1) / 200, z: (y0 + y1) / 200, r }));
-      localStorage.setItem(flagKey, '1');
-      return true;
-    } catch (e) { return false; }
+  // Brand products added by the household. Each is drawn with the shape of its type, sized to its own measurements (cm).
+  const SHAPES = {
+    sofa: { name: 'Kanepe / koltuk', fabric: true, def: [200, 95, 80] },
+    armchair: { name: 'Berjer / tekli koltuk', fabric: true, def: [80, 85, 90] },
+    bed: { name: 'Karyola', fabric: true, def: [175, 220, 100] },
+    pouf: { name: 'Puf / bench', fabric: true, def: [110, 45, 45] },
+    chair: { name: 'Sandalye', fabric: true, def: [48, 55, 85] },
+    table: { name: 'Yemek masası', def: [160, 90, 76] },
+    coffee: { name: 'Sehpa', def: [120, 60, 40] },
+    cabinet: { name: 'Dolap / komodin / konsol', def: [100, 46, 85] },
+    shelf: { name: 'Kitaplık / raf', def: [120, 38, 170] },
+    box: { name: 'Diğer', def: [100, 50, 50] }
+  };
+  Object.entries({ karyola: 'bed', komodin: 'cabinet', sifonyer: 'cabinet', dolap4: 'cabinet', dolap5: 'cabinet', dresuar: 'table', ayna: 'box', tvduvar: 'cabinet', benchpuf: 'pouf', sofa2: 'sofa', sofa3: 'sofa', berjer: 'armchair',
+    sehpa: 'coffee', tvset: 'cabinet', kitaplik: 'shelf', table: 'table', chair: 'chair', konsol: 'cabinet', billy: 'shelf' }).forEach(([k, s]) => { if (CATALOG[k]) CATALOG[k].shape = s; });
+  function scaled(g, bw, bd, bh, w, d, h) { g.scale.set(w / bw, h / bh, d / bd); return g; }
+  function makeShape(p, f) {
+    const w = p.w / 100, d = p.d / 100, h = p.h / 100;
+    switch (p.shape) {
+      case 'sofa': return scaled(sofa(w, f), w, 1.01, 0.765, w, d, h);
+      case 'armchair': return scaled(armchair(f), 0.79, 0.85, 0.9, w, d, h);
+      case 'bed': return scaled(bed160(f), 1.75, 2.26, 1.0, w, d, h);
+      case 'pouf': return scaled(benchPuf(f), 1.1, 0.45, 0.45, w, d, h);
+      case 'chair': return scaled(chair(f), 0.485, 0.55, 0.93, w, d, h);
+      case 'table': return scaled(diningTable(), 1.6, 0.9, 0.76, w, d, h);
+      case 'coffee': return scaled(coffeeTable(), 1.2, 0.6, 0.4, w, d, h);
+      case 'cabinet': return cabinet(w, h, d, Math.max(1, Math.round(w / 0.48)));
+      case 'shelf': return scaled(bookcase(), 1.2, 0.386, 1.713, w, d, h);
+      default: { const g = new THREE.Group(); g.add(box(w, h, d, lightOak)); return g; }
+    }
   }
-  const STORE_KEY = 'bohemia-salon-layout-v1';
+  const cmText = v => String(Math.round(v * 10) / 10).replace('.', ',');
+  const PRODUCTS_CACHE = 'bohemia-products-cache-v1';
+  let products = {}, rawProducts = {};
+  // Shared data is untrusted: keep only well-formed fields within sensible ranges.
+  function cleanProduct(p) {
+    if (!p || typeof p !== 'object') return null;
+    const num = (v, lo, hi) => { if (v === '' || v == null) return null; const n = Number(v); return isFinite(n) && n >= lo && n <= hi ? n : null; };
+    const w = num(p.w, 5, 800), d = num(p.d, 5, 800), h = num(p.h, 5, 400);
+    const brand = String(p.brand || '').trim().slice(0, 60), name = String(p.name || '').trim().slice(0, 80);
+    if (!w || !d || !h || !name) return null;
+    const url = String(p.url || '').trim();
+    return { brand, name, shape: SHAPES[p.shape] ? p.shape : 'box', w, d, h, fabric: FAB[p.fabric] ? p.fabric : 'ekru',
+      price: num(p.price, 0, 1e9), url: /^https:\/\//i.test(url) ? url.slice(0, 500) : '', note: String(p.note || '').trim().slice(0, 300),
+      created: Number(p.created) || 0 };
+  }
+  function registerProducts(map) {
+    Object.keys(CATALOG).forEach(k => { if (CATALOG[k].custom) delete CATALOG[k]; });
+    products = {};
+    Object.entries(map || {}).forEach(([id, raw]) => {
+      const p = cleanProduct(raw);
+      if (!p) return;
+      products[id] = p;
+      CATALOG['p:' + id] = { custom: true, id, brand: p.brand || 'Markasız', pname: p.name, name: (p.brand ? p.brand + ' ' : '') + p.name,
+        shape: p.shape, fabric: !!SHAPES[p.shape].fabric, defColor: p.fabric, w: p.w / 100, d: p.d / 100,
+        dims: `${cmText(p.w)} × ${cmText(p.d)} × ${cmText(p.h)} cm`, price: p.price, url: p.url, note: p.note,
+        make: it => makeShape(p, it.color || p.fabric) };
+    });
+  }
+  try { rawProducts = JSON.parse(localStorage.getItem(PRODUCTS_CACHE) || '{}') || {}; } catch (e) { rawProducts = {}; }
+  registerProducts(rawProducts);
+
+  // Default layout: rectangle in cm in house coordinates (x to the right, y down the plan; salon is 0–610 × 0–404) and rotation
+  // (0 faces down the plan, 1 faces right, 2 faces up, 3 faces left)
+  const DEFAULT = [
+    ['tvset', 70, 0, 370, 42, 0], ['sofa3', 100, 303, 333, 404, 2], ['sofa2', 0, 100, 101, 297, 1],
+    ['sehpa', 160, 170, 280, 230, 0],
+    ['table', 460, 140, 550, 300, 1],
+    ['chair', 405, 160, 460, 208.5, 1], ['chair', 405, 230, 460, 278.5, 1],
+    ['chair', 550, 160, 605, 208.5, 3], ['chair', 550, 230, 605, 278.5, 3],
+    ['karyola', 940, 178, 1115, 404, 2], ['komodin', 884, 358, 940, 404, 2], ['komodin', 1115, 358, 1171, 404, 2],
+    ['dolap4', 1035, 10, 1222.2, 73.4, 0], ['sifonyer', 830, 130, 876, 228.4, 1]
+  ];
+  // New key for the new flat: layouts saved for the previous house do not fit these rooms.
+  const STORE_KEY = 'bohemia-ac-blok-layout-v1';
   let nextId = 1;
-  const defaultState = () => DEFAULT.concat(BEDROOM_DEFAULT).map(([type, x0, y0, x1, y1, r]) => ({ id: nextId++, type, x: (x0 + x1) / 200, z: (y0 + y1) / 200, r }));
+  const defaultState = () => DEFAULT.map(([type, x0, y0, x1, y1, r]) => ({ id: nextId++, type, x: (x0 + x1) / 200, z: (y0 + y1) / 200, r }));
   function parseLayout(s) {
     if (!Array.isArray(s) || !s.length) return null;
     s.forEach(i => { if (i && i.type === 'tvunit') i.type = 'tvset'; });
-    if (!s.every(i => i && CATALOG[i.type] && isFinite(i.x) && isFinite(i.z))) return null;
-    return s.map(i => ({ id: nextId++, type: i.type, x: i.x, z: i.z, r: ((i.r | 0) % 4 + 4) % 4, color: FAB[i.color] ? i.color : undefined }));
+    const ok = s.filter(i => i && CATALOG[i.type] && isFinite(i.x) && isFinite(i.z));
+    if (!ok.length) return null;
+    return ok.map(i => ({ id: nextId++, type: i.type, x: i.x, z: i.z, r: ((i.r | 0) % 4 + 4) % 4, color: FAB[i.color] ? i.color : undefined }));
   }
   function loadState() {
     try {
@@ -811,17 +891,18 @@ window.addEventListener('error', e => {
     } catch (e) { /* storage unavailable */ }
     return defaultState();
   }
-  // The local app's server keeps the layout in data/layout.json; serverOk turns true once it answers.
+  const layoutJson = () => JSON.stringify(items.map(({ type, x, z, r, color }) => ({ type, x, z, r, color })));
+  // On the computer, the app's server.js keeps the layout in data/layout-ac-blok.json; serverOk turns true once it answers.
+  const LAYOUT_API = 'api/layout/ac-blok';
   let serverOk = false, putTimer = null;
   function pushServer() {
     if (!serverOk) return;
     clearTimeout(putTimer);
     putTimer = setTimeout(() => {
-      fetch('api/layout', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: layoutJson() })
+      fetch(LAYOUT_API, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: layoutJson() })
         .catch(() => { /* server stopped: local storage still has it */ });
     }, 300);
   }
-  const layoutJson = () => JSON.stringify(items.map(({ type, x, z, r, color }) => ({ type, x, z, r, color })));
   function saveState() {
     try { localStorage.setItem(STORE_KEY, layoutJson()); } catch (e) { /* ignore */ }
     pushServer();
@@ -829,7 +910,6 @@ window.addEventListener('error', e => {
 
   const furn = new THREE.Group(); scene.add(furn);
   let items = loadState();
-  addBedroomOnce(items, 'bohemia-bedroom-added');
   let selected = null;
 
   function extents(it) {
@@ -870,8 +950,9 @@ window.addEventListener('error', e => {
     renderer.shadowMap.needsUpdate = true;
   }
   function addItemObject(it) {
-    const obj = CATALOG[it.type].make(it);
+    const cat = CATALOG[it.type], obj = cat.make(it);
     obj.userData.itemId = it.id;
+    obj.userData.pj = cat.custom ? JSON.stringify(products[cat.id]) : '';
     it.obj = obj; it.fp = makeFootprint();
     furn.add(obj); scene.add(it.fp);
     clampItem(it); syncObject(it);
@@ -897,14 +978,7 @@ window.addEventListener('error', e => {
     return pa.some(ra => pb.some(rb => rectsMeet(ra, rb)));
   }
   // Door swings: hinge, leaf length, and the quarter (sx, sz) the leaf sweeps.
-  const DOORS = [
-    { x: DOOR.x, z: DOOR.z, r: DOOR.r, sx: 1, sz: 1, name: 'salon kapısının' },
-    { x: 1.2, z: -1.95, r: 0.8, sx: 1, sz: 1, name: 'mutfak kapısının' },
-    { x: -1.2, z: 2.15, r: 0.8, sx: -1, sz: 1, name: 'ebeveyn kapısının' },
-    { x: -1.0, z: D + 0.1, r: 0.8, sx: 1, sz: 1, name: '2. oda kapısının' },
-    { x: 3.38, z: D + 0.15, r: 0.7, sx: -1, sz: 1, name: 'balkon kapısının' },
-    { x: -1.05, z: -2.1, r: 0.9, sx: 1, sz: 1, name: 'giriş kapısının' }
-  ];
+  const DOORS = DOOR_SWINGS;
   function doorHits(it) {
     const hit = [];
     DOORS.forEach(dr => {
@@ -925,6 +999,7 @@ window.addEventListener('error', e => {
     const list = [];
     const onWall = x => !!CATALOG[x.type].wall;
     items.forEach(o => { if (o !== it && !tucks(it, o) && onWall(it) === onWall(o) && overlaps(it, o)) list.push(CATALOG[o.type].name); });
+    FIXTURES.forEach(f => { if (onWall(it)) return; if (partsOf(it).some(r => rectsMeet(r, f))) list.push(f.name); });
     list.push(...doorHits(it));
     return list;
   }
@@ -949,7 +1024,7 @@ window.addEventListener('error', e => {
     const b = document.createElement('b'); b.textContent = c.name + (c.fabric ? ', ' + (FAB[selected.color] || FAB.ekru).name.toLocaleLowerCase('tr') : '');
     const s = document.createElement('span'); s.className = 'm';
     const room = roomAt(selected.x, selected.z);
-    s.textContent = ` · ${room.name} · ${c.dims} · sol duvardan ${Math.round((r.x0 - room.x0) * 100)} cm, ${room.name === 'Salon' ? 'kapı' : 'üst'} duvarından ${Math.round((r.z0 - room.z0) * 100)} cm`;
+    s.textContent = ` · ${room.name} · ${c.dims} · sol duvardan ${Math.round((r.x0 - room.x0) * 100)} cm, üst duvardan ${Math.round((r.z0 - room.z0) * 100)} cm`;
     chip.append(b, s);
     const p = problems(selected);
     if (p.length) {
@@ -975,6 +1050,7 @@ window.addEventListener('error', e => {
       const d = document.createElement('span'); d.textContent = CATALOG[type].dims;
       li.append(n, d); ul.append(li);
     });
+    renderCatalog();
   }
   const rotBtn = document.getElementById('rot-btn'), delBtn = document.getElementById('del-btn');
   function select(it) {
@@ -1017,13 +1093,29 @@ window.addEventListener('error', e => {
     const prev = history.pop();
     select(null);
     items.forEach(removeItemObject);
-    items = JSON.parse(prev);
+    items = JSON.parse(prev).filter(i => CATALOG[i.type]);
     items.forEach(addItemObject);
     lastSnap = prev; undoBtn.disabled = !history.length;
     select(items.find(i => i.id === selId) || null);
     refreshFootprints(); setChip(); renderLegend(); saveState();
   }
   undoBtn.addEventListener('click', undo);
+
+  // Load the layout saved by the app's server, so every browser on this computer opens the same one.
+  fetch(LAYOUT_API, { cache: 'no-store' }).then(r => {
+    // Only the app's own server.js sends this header; a plain web host (GitHub Pages) does not, so the browser keeps the layout there.
+    if (!r.headers.get('X-Salon-App') || (!r.ok && r.status !== 404)) throw new Error('no app server');
+    serverOk = true;
+    return r.status === 404 ? null : r.json();
+  }).then(data => {
+    if (!serverOk) return;
+    const parsed = data && parseLayout(data);
+    if (!parsed) { saveState(); return; } // nothing on file yet: store the current layout
+    select(null); items.forEach(removeItemObject); items = parsed; items.forEach(addItemObject);
+    lastSnap = snap(); history.length = 0; undoBtn.disabled = true;
+    refreshFootprints(); setChip(); renderLegend();
+    try { localStorage.setItem(STORE_KEY, layoutJson()); } catch (e) { /* ignore */ }
+  }).catch(() => { /* opened without the server: browser storage only */ });
 
   // Layout transfer: copy the layout as text in one copy of the model, paste it into another.
   const ioDlg = document.getElementById('io-dlg'), ioText = document.getElementById('io-text'), ioMsg = document.getElementById('io-msg');
@@ -1041,15 +1133,6 @@ window.addEventListener('error', e => {
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(ioText.value).then(done, () => { try { document.execCommand('copy') ? done() : ioSay('Metin seçili: Ctrl+C ile kopyalayın.'); } catch (e) { ioSay('Metin seçili: Ctrl+C ile kopyalayın.'); } });
     else { try { document.execCommand('copy') ? done() : ioSay('Metin seçili: Ctrl+C ile kopyalayın.'); } catch (e) { ioSay('Metin seçili: Ctrl+C ile kopyalayın.'); } }
   });
-  document.getElementById('io-save').addEventListener('click', () => {
-    try {
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(new Blob([ioText.value], { type: 'application/json' }));
-      a.download = 'salon-yerlesim.json'; document.body.append(a); a.click(); a.remove();
-      setTimeout(() => URL.revokeObjectURL(a.href), 2000);
-      ioSay('İndirme başlatıldı. Olmadıysa "Kopyala"yı kullanın.');
-    } catch (e) { ioSay('İndirme burada desteklenmiyor; "Kopyala"yı kullanın.', true); }
-  });
   document.getElementById('io-apply').addEventListener('click', () => {
     let parsed = null;
     try { parsed = parseLayout(JSON.parse(ioText.value.trim())); } catch (e) { parsed = null; }
@@ -1060,24 +1143,6 @@ window.addEventListener('error', e => {
     if (chip) chip.innerHTML = '<b>' + parsed.length + ' eşya yerleştirildi.</b> <span class="m">Beğenmezseniz Ctrl+Z ile geri alın.</span>';
   });
   ioText.addEventListener('keydown', e => e.stopPropagation());
-
-  // Load the layout saved by the local app's server, so every browser on this computer opens the same one.
-  fetch('api/layout', { cache: 'no-store' }).then(r => {
-    // Only the app's own server.js sends this header; a plain web host (GitHub Pages) does not, so the browser keeps the layout there.
-    if (!r.headers.get('X-Salon-App') || (!r.ok && r.status !== 404)) throw new Error('no app server');
-    serverOk = true;
-    return r.status === 404 ? null : r.json();
-  }).then(data => {
-    if (!serverOk) return;
-    const parsed = data && parseLayout(data);
-    if (!parsed) { saveState(); return; } // nothing on file yet: store the current layout
-    const grew = addBedroomOnce(parsed, 'bohemia-bedroom-added-file');
-    select(null); items.forEach(removeItemObject); items = parsed; items.forEach(addItemObject);
-    lastSnap = snap(); history.length = 0; undoBtn.disabled = true;
-    refreshFootprints(); setChip(); renderLegend();
-    try { localStorage.setItem(STORE_KEY, layoutJson()); } catch (e) { /* ignore */ }
-    if (grew) saveState();
-  }).catch(() => { /* opened without the server: browser storage only */ });
 
   // Full screen: the real browser full screen when allowed, otherwise the page fills the window
   const fsBtn = document.getElementById('fs-btn');
@@ -1113,14 +1178,221 @@ window.addEventListener('error', e => {
   function changed() { refreshFootprints(); setChip(); renderLegend(); saveState(); recordHistory(); }
 
   const addSel = document.getElementById('add-type');
-  Object.entries(CATALOG).forEach(([k, c]) => {
-    const o = document.createElement('option'); o.value = k; o.textContent = `${c.name} (${c.dims.split(' × ').slice(0, 2).join(' × ')})`;
-    addSel.append(o);
-  });
-  document.getElementById('add-btn').addEventListener('click', () => {
-    const it = { id: nextId++, type: addSel.value, x: controls.target.x, z: controls.target.z, r: 0 };
+  const brandsOf = () => [...new Set(Object.values(CATALOG).map(c => c.brand))].sort((a, b) => a.localeCompare(b, 'tr'));
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  // The add menu, grouped by brand
+  function fillAddSelect() {
+    const keep = addSel.value; addSel.innerHTML = '';
+    brandsOf().forEach(b => {
+      const g = document.createElement('optgroup'); g.label = b;
+      Object.entries(CATALOG).filter(([, c]) => c.brand === b).forEach(([k, c]) => {
+        const o = el('option', null, `${c.pname || c.name} (${c.dims.split(' × ').slice(0, 2).join(' × ')})`); o.value = k; g.append(o);
+      });
+      addSel.append(g);
+    });
+    if (CATALOG[keep]) addSel.value = keep;
+  }
+  function placeItem(type) {
+    const c = CATALOG[type];
+    if (!c) return;
+    const it = { id: nextId++, type, x: controls.target.x, z: controls.target.z, r: 0 };
+    if (c.fabric && c.defColor) it.color = c.defColor;
     items.push(it); addItemObject(it); select(it); changed();
+  }
+  document.getElementById('add-btn').addEventListener('click', () => placeItem(addSel.value));
+
+  // Catalog: every piece that can be placed, to review together. Brand products and review marks live in the
+  // artifact's shared store when it is available, otherwise in this browser.
+  var catalogReady;
+  const STATUS = { begen: 'Beğendik', belki: 'Belki', elendi: 'Elendi' };
+  const REVIEW_CACHE = 'bohemia-review-cache-v1';
+  let review = {}, db = null;
+  try { const r = JSON.parse(localStorage.getItem(REVIEW_CACHE) || '{}'); if (r && typeof r === 'object') review = r; } catch (e) { /* no cache */ }
+  const cacheSet = (key, v) => { try { localStorage.setItem(key, JSON.stringify(v)); } catch (e) { /* ignore */ } };
+  const statusOf = k => STATUS[review[k]] ? review[k] : '';
+  const catList = document.getElementById('cat-list'), catQ = document.getElementById('cat-q'), catBrand = document.getElementById('cat-brand'),
+    catStatus = document.getElementById('cat-status'), catSum = document.getElementById('cat-sum'), catSync = document.getElementById('cat-sync');
+  [['all', 'Tüm durumlar'], ['none', 'Bakılmadı'], ...Object.entries(STATUS)].forEach(([v, t]) => { const o = el('option', null, t); o.value = v; catStatus.append(o); });
+  function fillBrandFilter() {
+    const keep = catBrand.value, brands = brandsOf();
+    catBrand.innerHTML = '';
+    [['', 'Tüm markalar'], ...brands.map(b => [b, b])].forEach(([v, t]) => { const o = el('option', null, t); o.value = v; catBrand.append(o); });
+    catBrand.value = brands.includes(keep) ? keep : '';
+    const dl = document.getElementById('brand-list'); dl.innerHTML = '';
+    brands.forEach(b => { const o = document.createElement('option'); o.value = b; dl.append(o); });
+  }
+  const tl = n => Math.round(n).toLocaleString('tr-TR') + ' ₺';
+  function renderCatalog() {
+    if (!catalogReady) return;
+    const q = catQ.value.trim().toLocaleLowerCase('tr'), b = catBrand.value, st = catStatus.value;
+    const counts = {};
+    items.forEach(i => { counts[i.type] = (counts[i.type] || 0) + 1; });
+    let shown = 0, likedN = 0, likedSum = 0, likedNoPrice = 0;
+    Object.entries(CATALOG).forEach(([k, c]) => {
+      if (statusOf(k) !== 'begen') return;
+      likedN++; if (c.price != null) likedSum += c.price; else likedNoPrice++;
+    });
+    catList.innerHTML = '';
+    Object.entries(CATALOG)
+      .sort((x, y) => x[1].brand.localeCompare(y[1].brand, 'tr') || (x[1].pname || x[1].name).localeCompare(y[1].pname || y[1].name, 'tr'))
+      .forEach(([k, c]) => {
+        const s = statusOf(k);
+        if (b && c.brand !== b) return;
+        if (st !== 'all' && (st === 'none' ? s !== '' : s !== st)) return;
+        if (q && !(c.brand + ' ' + c.name + ' ' + (c.note || '')).toLocaleLowerCase('tr').includes(q)) return;
+        shown++;
+        const card = el('article', 'pc'); card.dataset.status = s;
+        const top = el('div', 'pc-top');
+        const sel = el('select', 'pc-st'); sel.setAttribute('aria-label', 'Durum: ' + c.name);
+        [['', 'Bakılmadı'], ...Object.entries(STATUS)].forEach(([v, t]) => { const o = el('option', null, t); o.value = v; sel.append(o); });
+        sel.value = s;
+        sel.addEventListener('change', () => setStatus(k, sel.value));
+        top.append(el('span', 'pc-brand', c.brand), sel);
+        card.append(top, el('h3', null, c.pname || c.name));
+        card.append(el('p', null, (SHAPES[c.shape] ? SHAPES[c.shape].name + ' · ' : '') + c.dims));
+        card.append(el('p', null, [c.price != null ? tl(c.price) : null, counts[k] ? 'Evde ' + counts[k] + ' adet' : 'Evde yok'].filter(Boolean).join(' · ')));
+        if (c.note) card.append(el('p', null, c.note));
+        const act = el('div', 'pc-act');
+        const put = el('button', 'btn', 'Odaya koy');
+        put.addEventListener('click', () => { placeItem(k); stage.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' }); });
+        act.append(put);
+        if (c.url) { const a = el('a', null, 'Ürün sayfası'); a.href = c.url; a.target = '_blank'; a.rel = 'noopener noreferrer'; act.append(a); }
+        if (c.custom) {
+          const ed = el('button', 'btn', 'Düzenle');
+          ed.addEventListener('click', () => openProduct(c.id));
+          const del = el('button', 'btn', 'Sil');
+          let armed = null;
+          del.addEventListener('click', async () => {
+            if (!armed) {
+              del.textContent = counts[k] ? `Evdeki ${counts[k]} adetle silinsin mi?` : 'Silinsin mi?'; del.classList.add('danger');
+              armed = setTimeout(() => { armed = null; del.textContent = 'Sil'; del.classList.remove('danger'); }, 4000);
+              return;
+            }
+            clearTimeout(armed); del.disabled = true;
+            try { await removeProduct(c.id); } catch (e) { del.disabled = false; del.textContent = 'Silinemedi'; }
+          });
+          act.append(ed, del);
+        }
+        card.append(act); catList.append(card);
+      });
+    if (!shown) catList.append(el('p', 'cat-empty', 'Bu filtreye uyan ürün yok.'));
+    let sum = `${shown} ürün gösteriliyor · beğenilen ${likedN}`;
+    if (likedSum) sum += ` · beğenilenlerin toplamı ${tl(likedSum)}` + (likedNoPrice ? ` (${likedNoPrice} ürünün fiyatı girilmedi)` : '');
+    catSum.textContent = sum;
+  }
+  [catQ, catBrand, catStatus].forEach(c => c.addEventListener(c === catQ ? 'input' : 'change', renderCatalog));
+
+  // New product data: rebuild placed pieces whose product changed, drop pieces whose product was deleted.
+  function applyProducts(map) {
+    rawProducts = map; cacheSet(PRODUCTS_CACHE, map);
+    registerProducts(map);
+    const gone = items.filter(i => !CATALOG[i.type]);
+    gone.forEach(removeItemObject);
+    if (gone.length) { items = items.filter(i => CATALOG[i.type]); if (selected && !CATALOG[selected.type]) select(null); }
+    let rebuilt = false;
+    items.forEach(i => {
+      const c = CATALOG[i.type];
+      if (c.custom && i.obj.userData.pj !== JSON.stringify(products[c.id])) { removeItemObject(i); addItemObject(i); rebuilt = true; }
+    });
+    fillAddSelect(); fillBrandFilter();
+    if (gone.length) changed();
+    else { refreshFootprints(); setChip(); renderLegend(); if (rebuilt) saveState(); }
+  }
+  async function saveProduct(id, p) {
+    if (db) await db.collection('products').doc(id).set(p);
+    else applyProducts(Object.assign({}, rawProducts, { [id]: p }));
+  }
+  async function removeProduct(id) {
+    if (db) await db.collection('products').doc(id).delete();
+    else { const m = Object.assign({}, rawProducts); delete m[id]; applyProducts(m); }
+    if (statusOf('p:' + id)) setStatus('p:' + id, '');
+  }
+  async function setStatus(k, v) {
+    const m = Object.assign({}, review);
+    if (v) m[k] = v; else delete m[k];
+    review = m; cacheSet(REVIEW_CACHE, m); renderCatalog();
+    if (!db) return;
+    try { const ref = db.collection('review').doc(k); if (v) await ref.set({ status: v }); else await ref.delete(); }
+    catch (e) { catSync.textContent = 'Durum ortak kataloga kaydedilemedi.'; }
+  }
+
+  // Add / edit form
+  const pDlg = document.getElementById('prod-dlg'), pForm = document.getElementById('prod-form'), pMsg = document.getElementById('prod-msg');
+  const pf = pForm.elements;
+  Object.entries(SHAPES).forEach(([k, s]) => { const o = el('option', null, s.name); o.value = k; pf.shape.append(o); });
+  Object.entries(FAB).forEach(([k, c]) => { const o = el('option', null, c.name); o.value = k; pf.fabric.append(o); });
+  let editingId = null;
+  function shapeChanged() {
+    const s = SHAPES[pf.shape.value];
+    document.getElementById('pf-fabric').hidden = !s.fabric;
+    ['w', 'd', 'h'].forEach((n, i) => { pf[n].placeholder = 'örn. ' + s.def[i]; });
+  }
+  pf.shape.addEventListener('change', shapeChanged);
+  const closeP = () => (pDlg.close ? pDlg.close() : pDlg.removeAttribute('open'));
+  function openProduct(id) {
+    editingId = id && products[id] ? id : null;
+    const p = editingId ? products[editingId] : null;
+    document.getElementById('prod-title').textContent = p ? 'Ürünü düzenle' : 'Marka ürünü ekle';
+    pf.brand.value = p ? p.brand : ''; pf.name.value = p ? p.name : '';
+    pf.shape.value = p ? p.shape : 'sofa';
+    pf.w.value = p ? p.w : ''; pf.d.value = p ? p.d : ''; pf.h.value = p ? p.h : '';
+    pf.fabric.value = p ? p.fabric : 'ekru';
+    pf.price.value = p && p.price != null ? p.price : ''; pf.url.value = p ? p.url : ''; pf.note.value = p ? p.note : '';
+    shapeChanged(); pMsg.textContent = ''; pMsg.classList.remove('bad');
+    if (pDlg.showModal) pDlg.showModal(); else pDlg.setAttribute('open', '');
+    pf.brand.focus();
+  }
+  document.getElementById('prod-add').addEventListener('click', () => openProduct(null));
+  document.getElementById('prod-cancel').addEventListener('click', closeP);
+  pForm.addEventListener('keydown', e => e.stopPropagation());
+  pForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const bad = t => { pMsg.textContent = t; pMsg.classList.add('bad'); };
+    const url = pf.url.value.trim();
+    if (url && !/^https:\/\//i.test(url)) { bad('Ürün sayfası https:// ile başlamalı.'); return; }
+    const old = editingId ? products[editingId] : null;
+    const p = cleanProduct({ brand: pf.brand.value, name: pf.name.value, shape: pf.shape.value, w: pf.w.value, d: pf.d.value, h: pf.h.value,
+      fabric: pf.fabric.value, price: pf.price.value, url, note: pf.note.value, created: old ? old.created : Date.now() });
+    if (!p) { bad('Ürün adı ve üç ölçü (cm) gerekli.'); return; }
+    const id = editingId || (db ? db.collection('products').doc().id : 'l' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
+    const btn = pForm.querySelector('[type=submit]'); btn.disabled = true;
+    try {
+      await saveProduct(id, p);
+      closeP();
+      catQ.value = ''; catStatus.value = 'all'; catBrand.value = brandsOf().includes(p.brand) ? p.brand : '';
+      renderCatalog();
+    } catch (err) {
+      bad(err && err.code === 'quota_exceeded' ? 'Katalog dolu: önce birkaç ürünü silin.' : 'Kaydedilemedi. Ortak kataloga ürün eklemek için bu sayfada düzenleme izni gerekir.');
+    } finally { btn.disabled = false; }
   });
+
+  catalogReady = true;
+  fillAddSelect(); fillBrandFilter(); renderCatalog();
+  catSync.textContent = 'Ürünler şimdilik bu tarayıcıda saklanıyor.';
+  // Shared store: everyone who opens the page sees the same brand products and review marks.
+  (async () => {
+    let d = null;
+    try { d = window.claude && window.claude.use ? await window.claude.use('db') : null; } catch (e) { d = null; }
+    if (!d) return;
+    db = d;
+    catSync.textContent = 'Ortak katalog yükleniyor…';
+    const timer = setTimeout(() => { catSync.textContent = 'Ortak katalog şu an alınamıyor; son görülen liste gösteriliyor.'; }, 10000);
+    db.collection('products').onSnapshot(snap => {
+      const map = {};
+      snap.docs.forEach(doc => { if (doc.exists) map[doc.id] = doc.data(); });
+      if (!snap.metadata.fromCache) {
+        clearTimeout(timer);
+        catSync.textContent = 'Ortak katalog: eklenen ürünleri ve işaretleri bu sayfayı açan herkes görür.';
+        applyProducts(map);
+      } else applyProducts(Object.assign({}, rawProducts, map));
+    }, () => { clearTimeout(timer); catSync.textContent = 'Ortak katalog açılamadı; son görülen liste gösteriliyor.'; });
+    db.collection('review').onSnapshot(snap => {
+      const m = {};
+      snap.docs.forEach(doc => { const s = doc.exists && doc.data().status; if (STATUS[s]) m[doc.id] = s; });
+      if (snap.metadata.fromCache && snap.empty) return;
+      review = m; cacheSet(REVIEW_CACHE, m); renderCatalog();
+    }, () => { /* marks stay as last seen */ });
+  })();
   function rotateSelected() {
     if (!selected) return;
     selected.r = (selected.r + 1) % 4; clampItem(selected); syncObject(selected); changed();
@@ -1200,7 +1472,7 @@ window.addEventListener('error', e => {
   window.addEventListener('keyup', e => { held.delete(e.key.toLowerCase()); if (e.key === 'Shift') held.delete('shift'); });
   window.addEventListener('blur', () => held.clear());
   window.addEventListener('keydown', e => {
-    if (!selected || e.target.closest('select')) return;
+    if (!selected || e.target.closest('select, input, textarea, dialog')) return;
     const step = e.shiftKey ? 0.1 : 0.01;
     const moves = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
     if (e.key === 'r' || e.key === 'R') { rotateSelected(); e.preventDefault(); }
@@ -1215,12 +1487,14 @@ window.addEventListener('error', e => {
 
   // Lights
   scene.add(new THREE.HemisphereLight(0xffffff, 0x8a6a50, 0.6));
-  const ceiling = new THREE.PointLight(0xfff0dc, 0.55, 9);
-  ceiling.position.set(W / 2, H - 0.2, D / 2); scene.add(ceiling);
+  // A ceiling light in each main room
+  [[W / 2, D / 2], [2.55, -1.33], [10.3, 2.07], [10.75, -1.65], [7.0, -0.75], [7.2, 2.0]].forEach(([x, z]) => {
+    const l = new THREE.PointLight(0xfff0dc, 0.45, 7); l.position.set(x, H - 0.2, z); scene.add(l);
+  });
   const sun = new THREE.DirectionalLight(0xfff4e2, 1.0);
-  sun.position.set(W + 3.5, 3.6, 1.2); sun.target.position.set(W / 2, 0, D / 2);
-  sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024);
-  Object.assign(sun.shadow.camera, { left: -4, right: 4, top: 4, bottom: -4, near: 0.5, far: 14 });
+  sun.position.set(-3, 9, 8); sun.target.position.set(5.45, 0, 0.37);
+  sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+  Object.assign(sun.shadow.camera, { left: -9, right: 9, top: 9, bottom: -9, near: 0.5, far: 30 });
   sun.shadow.bias = -0.0006;
   scene.add(sun, sun.target);
 
@@ -1230,11 +1504,13 @@ window.addEventListener('error', e => {
     const a = s.r * Math.PI / 2, fx = Math.sin(a), fz = Math.cos(a);
     return { pos: [s.x - fx * 0.05, 1.1, s.z - fz * 0.05], target: [s.x + fx * 3, 0.95, s.z + fz * 3] };
   }
+  // Camera height that fits a wx × dz area in a straight-down view
+  const fitH = (wx, dz) => 1.1 * Math.max(dz, wx / camera.aspect) / (2 * Math.tan(camera.fov * Math.PI / 360));
   const views = {
-    persp: () => ({ pos: [-0.9, 4.0, 6.0], target: [2.35, 0.5, 1.8] }),
-    top: () => ({ pos: [2.35, 7.0, 1.81], target: [2.35, 0, 1.8] }),
+    persp: () => ({ pos: [-1.4, 5.2, 8.4], target: [W / 2, 0.5, D / 2] }),
+    top: () => ({ pos: [W / 2, fitH(W + 0.4, D + 0.4), D / 2 + 0.01], target: [W / 2, 0, D / 2] }),
     eye: eyeView,
-    house: () => ({ pos: [0.38, 13.5, D - 1.64], target: [0.38, 0, D - 1.65] })
+    house: () => ({ pos: [5.45, fitH(14.2, 7.8), 0.38], target: [5.45, 0, 0.37] })
   };
   let tween = null;
   function goTo(key, instant) {
@@ -1294,5 +1570,6 @@ window.addEventListener('error', e => {
   requestAnimationFrame(loop);
 })();
 </script>
+
 </body>
 </html>

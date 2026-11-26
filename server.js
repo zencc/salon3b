@@ -8,7 +8,8 @@ const { exec } = require('child_process');
 const PORT = Number(process.env.PORT) || 8137;
 const ROOT = __dirname;
 const DATA_DIR = path.join(ROOT, 'data');
-const LAYOUT = path.join(DATA_DIR, 'layout.json');
+// One file per flat: /api/layout -> data/layout.json (the first flat), /api/layout/<name> -> data/layout-<name>.json
+const layoutFile = name => path.join(DATA_DIR, name ? 'layout-' + name + '.json' : 'layout.json');
 const URL_BASE = `http://localhost:${PORT}/`;
 const openBrowser = !process.argv.includes('--no-open');
 
@@ -23,7 +24,8 @@ function send(res, status, body, type) {
   res.end(body);
 }
 
-function handleLayout(req, res) {
+function handleLayout(req, res, name) {
+  const LAYOUT = layoutFile(name);
   if (req.method === 'GET') {
     fs.readFile(LAYOUT, 'utf8', (err, text) => {
       if (err) return send(res, 404, 'no layout saved yet');
@@ -69,7 +71,8 @@ function handleStatic(req, res) {
 
 const server = http.createServer((req, res) => {
   const pathname = new URL(req.url, URL_BASE).pathname;
-  if (pathname === '/api/layout') return handleLayout(req, res);
+  const m = /^\/api\/layout(?:\/([a-z0-9-]{1,40}))?$/.exec(pathname);
+  if (m) return handleLayout(req, res, m[1]);
   handleStatic(req, res);
 });
 
