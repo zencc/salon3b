@@ -145,7 +145,7 @@ body.full .cat { display: none; }
     <button class="btn primary" id="add-btn">Odaya koy</button>
     <span class="spacer"></span>
     <span class="swatches" id="swatches" role="group" aria-label="Kumaş rengi" hidden><span class="sw-label">Kumaş</span></span>
-    <button class="btn" id="rot-btn" disabled>Döndür 90°</button>
+    <button class="btn" id="rot-btn" disabled>Döndür 45°</button>
     <button class="btn" id="del-btn" disabled>Kaldır</button>
     <button class="btn" id="undo-btn" disabled title="Ctrl+Z">Geri al</button>
     <button class="btn" id="io-btn">Yerleşim</button>
@@ -154,7 +154,7 @@ body.full .cat { display: none; }
 
   <div class="stage" id="stage">
     <button class="btn fs-btn" id="fs-btn" aria-pressed="false" title="F">Tam ekran</button>
-    <div class="hint">Eşyayı sürükleyerek taşıyın · boş yeri sürükleyerek odayı döndürün · WASD ile gezin (Shift hızlı) · Ctrl+Z geri alır · F tam ekran · seçiliyken R döndürür, oklar 1 cm kaydırır</div>
+    <div class="hint">Eşyayı sürükleyerek taşıyın · boş yeri sürükleyerek odayı döndürün · WASD ile gezin (Shift hızlı) · Ctrl+Z geri alır · F tam ekran · seçiliyken R 45° döndürür, oklar 1 cm kaydırır</div>
     <div class="chip" id="chip"><b>Bir eşyaya dokunun</b> <span class="m">seçip sürükleyebilirsiniz</span></div>
   </div>
 
@@ -888,12 +888,14 @@ window.addEventListener('error', e => {
   const STORE_KEY = 'bohemia-ac-blok-layout-v1';
   let nextId = 1;
   const defaultState = () => DEFAULT.map(([type, x0, y0, x1, y1, r]) => ({ id: nextId++, type, x: (x0 + x1) / 200, z: (y0 + y1) / 200, r }));
+  // Rotation in quarter turns, in half steps: 0, 0.5 (45°), 1 (90°) … 3.5
+  const normR = r => { const v = Math.round(Number(r) * 2) / 2; return isFinite(v) ? ((v % 4) + 4) % 4 : 0; };
   function parseLayout(s) {
     if (!Array.isArray(s) || !s.length) return null;
     s.forEach(i => { if (i && i.type === 'tvunit') i.type = 'tvset'; });
     const ok = s.filter(i => i && CATALOG[i.type] && isFinite(i.x) && isFinite(i.z));
     if (!ok.length) return null;
-    return ok.map(i => ({ id: nextId++, type: i.type, x: i.x, z: i.z, r: ((i.r | 0) % 4 + 4) % 4, color: FAB[i.color] ? i.color : undefined }));
+    return ok.map(i => ({ id: nextId++, type: i.type, x: i.x, z: i.z, r: normR(i.r), color: FAB[i.color] ? i.color : undefined }));
   }
   function loadState() {
     try {
@@ -925,8 +927,13 @@ window.addEventListener('error', e => {
   let selected = null;
 
   function extents(it) {
-    const c = CATALOG[it.type], odd = it.r % 2 === 1;
-    return { hx: (odd ? c.d : c.w) / 2, hz: (odd ? c.w : c.d) / 2 };
+    const c = CATALOG[it.type], a = it.r * Math.PI / 2, cs = Math.abs(Math.cos(a)), sn = Math.abs(Math.sin(a));
+    return { hx: (c.w * cs + c.d * sn) / 2, hz: (c.w * sn + c.d * cs) / 2 };
+  }
+  // Corners of the piece's own outline, turned with it (for the drawn footprint)
+  function outline(it) {
+    const c = CATALOG[it.type], a = it.r * Math.PI / 2, cs = Math.cos(a), sn = Math.sin(a), hw = c.w / 2, hd = c.d / 2;
+    return [[-hw, -hd], [hw, -hd], [hw, hd], [-hw, hd], [-hw, -hd]].map(([x, z]) => [it.x + x * cs + z * sn, it.z - x * sn + z * cs]);
   }
   function rectOf(it) { const e = extents(it); return { x0: it.x - e.hx, x1: it.x + e.hx, z0: it.z - e.hz, z1: it.z + e.hz }; }
   function roomAt(x, z) {
@@ -956,8 +963,8 @@ window.addEventListener('error', e => {
     const obj = it.obj;
     obj.position.set(it.x, 0, it.z);
     obj.rotation.y = it.r * Math.PI / 2;
-    const r = rectOf(it), y = 0.006, p = it.fp.geometry.attributes.position;
-    [[r.x0, r.z0], [r.x1, r.z0], [r.x1, r.z1], [r.x0, r.z1], [r.x0, r.z0]].forEach(([x, z], i) => p.setXYZ(i, x, y, z));
+    const y = 0.006, p = it.fp.geometry.attributes.position;
+    outline(it).forEach(([x, z], i) => p.setXYZ(i, x, y, z));
     p.needsUpdate = true;
     renderer.shadowMap.needsUpdate = true;
   }
@@ -977,7 +984,7 @@ window.addEventListener('error', e => {
   function partsOf(it) {
     const c = CATALOG[it.type];
     const parts = c.parts || [[-c.w / 2, c.w / 2, -c.d / 2, c.d / 2]];
-    const a = it.r * Math.PI / 2, cs = Math.round(Math.cos(a)), sn = Math.round(Math.sin(a));
+    const a = it.r * Math.PI / 2, cs = Math.cos(a), sn = Math.sin(a);
     return parts.map(([x0, x1, z0, z1]) => {
       const pts = [[x0, z0], [x1, z0], [x1, z1], [x0, z1]].map(([x, z]) => [x * cs + z * sn, -x * sn + z * cs]);
       const xs = pts.map(p => p[0]), zs = pts.map(p => p[1]);
@@ -985,9 +992,24 @@ window.addEventListener('error', e => {
     });
   }
   const rectsMeet = (ra, rb, eps = 0.005) => ra.x0 < rb.x1 - eps && rb.x0 < ra.x1 - eps && ra.z0 < rb.z1 - eps && rb.z0 < ra.z1 - eps;
+  // Each footprint part as its four corners, turned with the piece
+  function quadsOf(it) {
+    const c = CATALOG[it.type], a = it.r * Math.PI / 2, cs = Math.cos(a), sn = Math.sin(a);
+    return (c.parts || [[-c.w / 2, c.w / 2, -c.d / 2, c.d / 2]]).map(([x0, x1, z0, z1]) =>
+      [[x0, z0], [x1, z0], [x1, z1], [x0, z1]].map(([x, z]) => [it.x + x * cs + z * sn, it.z - x * sn + z * cs]));
+  }
+  function quadsMeet(p, q, eps = 0.005) {
+    for (const poly of [p, q]) for (let i = 0; i < 4; i++) {
+      const [x1, z1] = poly[i], [x2, z2] = poly[(i + 1) % 4], nx = z1 - z2, nz = x2 - x1, len = Math.hypot(nx, nz);
+      const pr = pts => pts.map(([x, z]) => (x * nx + z * nz) / len);
+      const a = pr(p), b = pr(q);
+      if (Math.max(...a) - eps <= Math.min(...b) || Math.max(...b) - eps <= Math.min(...a)) return false;
+    }
+    return true;
+  }
   function overlaps(a, b) {
-    const pa = partsOf(a), pb = partsOf(b);
-    return pa.some(ra => pb.some(rb => rectsMeet(ra, rb)));
+    const pa = quadsOf(a), pb = quadsOf(b);
+    return pa.some(qa => pb.some(qb => quadsMeet(qa, qb)));
   }
   // Door swings: hinge, leaf length, and the quarter (sx, sz) the leaf sweeps.
   const DOORS = DOOR_SWINGS;
@@ -1407,7 +1429,7 @@ window.addEventListener('error', e => {
   })();
   function rotateSelected() {
     if (!selected) return;
-    selected.r = (selected.r + 1) % 4; clampItem(selected); syncObject(selected); changed();
+    selected.r = normR(selected.r + 0.5); clampItem(selected); syncObject(selected); changed();
   }
   function removeSelected() {
     if (!selected) return;
