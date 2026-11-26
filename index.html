@@ -766,6 +766,17 @@ window.addEventListener('error', e => {
     wallCube(g, xr, y0 + 0.7, zb, cubeWhite, cubeGrey);
     return g;
   }
+  // Floor lamp: brass base 29 cm across, thin brass pole, white drum shade 42 cm across, 153 cm tall
+  const brass = M(0xb8954f, 0.35, { metalness: 0.7 });
+  const shadeMat = new THREE.MeshStandardMaterial({ color: 0xf6f1e6, roughness: 0.9, emissive: 0xffe6b8, emissiveIntensity: 0.25, side: THREE.DoubleSide });
+  function floorLamp() {
+    const g = new THREE.Group(), H = 1.53, sh = 0.27;
+    g.add(cyl(0.145, 0.145, 0.014, brass, 0, 0, 0));
+    g.add(cyl(0.009, 0.009, H - sh + 0.03, brass, 0, 0.014, 0));
+    const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.21, sh, 40, 1, true), shadeMat);
+    drum.position.set(0, H - sh / 2, 0); drum.castShadow = true; g.add(drum);
+    return g;
+  }
   function coffeeTable() {
     const g = new THREE.Group();
     g.add(box(1.2, 0.03, 0.6, mat.white, 0, 0.37, 0));
@@ -782,6 +793,7 @@ window.addEventListener('error', e => {
     dolap4: { name: '4 kapaklı dolap', dims: '187,2 × 63,4 × 228,3 cm', w: 1.872, d: 0.634, make: () => wardrobe(1.872, 2.283, 0.634, 4) },
     dolap5: { name: '5 kapaklı dolap (aynalı)', dims: '232,5 × 63,4 × 228,3 cm', w: 2.325, d: 0.634, make: () => wardrobe(2.325, 2.283, 0.634, 5, true) },
     dresuar: { name: 'Dresuar / makyaj masası', dims: '100 × 46 × 81 cm', w: 1.0, d: 0.46, make: dresuar },
+    lamba: { name: 'Lambader (abajurlu)', dims: 'Ø 42 × 153 cm, taban Ø 29', w: 0.29, d: 0.29, make: floorLamp },
     ayna: { name: 'Ayna (duvara)', dims: '54 × 2,2 × 70 cm', w: 0.54, d: 0.022, wall: true, make: ayna },
     benchpuf: { name: 'Bench puf', dims: '110 × 45 × 45 cm', w: 1.1, d: 0.45, fabric: true, make: it => benchPuf(it.color) },
     sofa2: { name: "2'li koltuk (yataklı)", dims: '197 × 101 × 76,5 cm', w: 1.97, d: 1.01, fabric: true, make: it => sofa(1.97, it.color) },
@@ -797,7 +809,7 @@ window.addEventListener('error', e => {
     billy: { name: 'Köşe kitaplık (meşe)', dims: '96,3/96,3 × 28 × 202 cm', w: 0.963, d: 0.963, make: billyCorner,
       parts: [[-0.4815, 0.4815, -0.4815, -0.2015], [-0.4815, -0.2015, -0.2015, 0.4815], [-0.2015, 0.07, -0.2015, 0.07]] }
   };
-  Object.keys(CATALOG).forEach(k => { CATALOG[k].brand = k === 'billy' ? 'Diğer' : 'Kelebek Bohemia'; });
+  Object.keys(CATALOG).forEach(k => { CATALOG[k].brand = k === 'billy' || k === 'lamba' ? 'Diğer' : 'Kelebek Bohemia'; });
 
   // Brand products added by the household. Each is drawn with the shape of its type, sized to its own measurements (cm).
   const SHAPES = {
@@ -812,7 +824,7 @@ window.addEventListener('error', e => {
     shelf: { name: 'Kitaplık / raf', def: [120, 38, 170] },
     box: { name: 'Diğer', def: [100, 50, 50] }
   };
-  Object.entries({ karyola: 'bed', komodin: 'cabinet', sifonyer: 'cabinet', dolap4: 'cabinet', dolap5: 'cabinet', dresuar: 'table', ayna: 'box', tvduvar: 'cabinet', benchpuf: 'pouf', sofa2: 'sofa', sofa3: 'sofa', berjer: 'armchair',
+  Object.entries({ karyola: 'bed', komodin: 'cabinet', sifonyer: 'cabinet', dolap4: 'cabinet', dolap5: 'cabinet', dresuar: 'table', ayna: 'box', lamba: 'box', tvduvar: 'cabinet', benchpuf: 'pouf', sofa2: 'sofa', sofa3: 'sofa', berjer: 'armchair',
     sehpa: 'coffee', tvset: 'cabinet', kitaplik: 'shelf', table: 'table', chair: 'chair', konsol: 'cabinet', billy: 'shelf' }).forEach(([k, s]) => { if (CATALOG[k]) CATALOG[k].shape = s; });
   function scaled(g, bw, bd, bh, w, d, h) { g.scale.set(w / bw, h / bh, d / bd); return g; }
   function makeShape(p, f) {
