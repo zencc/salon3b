@@ -207,7 +207,7 @@ body.full .cat { display: none; }
       <div class="row"><span class="msg" id="prod-msg" role="status"></span></div>
     </form>
   </dialog>
-  <p class="note">Mobilya ölçüleri kelebek.com ürün sayfalarından. Ev, 2+1 A&amp;C Blok daire planından ölçeklendi: oda alanları plandaki net değerler, duvar, kapı ve pencere yerleri plandan yaklaşık; tavan yüksekliği 2,6 m varsayıldı. Mutfak tezgâhı ve banyo eşyaları sabittir. Çakışan ya da kapının açılma alanına giren eşyanın tabanı kırmızı görünür. Yerleşiminiz bilgisayardaki uygulamada data/layout-ac-blok.json dosyasına, internetten açıldığında bu tarayıcıya kaydedilir; cihazlar arasında taşımak için "Yerleşim" düğmesini kullanın.</p>
+  <p class="note">Mobilya ölçüleri kelebek.com ürün sayfalarından. Ev, 2+1 A&amp;C Blok (Luna 2+1) satış krokisinden ölçüldü: odalar, duvar girinti ve çıkıntıları, kapı ve pencereler krokiye göre, birkaç santimetre payla; oda alanları plandaki net değerler; tavan yüksekliği 2,6 m varsayıldı. Mutfak tezgâhı ve banyo eşyaları sabittir. Çakışan ya da kapının açılma alanına giren eşyanın tabanı kırmızı görünür. Yerleşiminiz bilgisayardaki uygulamada data/layout-ac-blok.json dosyasına, internetten açıldığında bu tarayıcıya kaydedilir; cihazlar arasında taşımak için "Yerleşim" düğmesini kullanın.</p>
 </div>
 
 <script>
@@ -230,9 +230,10 @@ window.addEventListener('error', e => {
     stage.innerHTML = '<p class="err">3B görünüm yüklenemedi. Sayfayı yenileyin.</p>';
     return;
   }
-  // 2+1 A&C Blok, scaled from the sales plan so each room matches its net area. Salon interior is x 0–W, z 0–D;
-  // kitchen and balkon lie above it (z < 0), baths and ebeveyn to the right, yatak odası top right.
-  const W = 6.1, D = 4.04, H = 2.6, T = 0.1;
+  // 2+1 A&C Blok (Luna 2+1), measured from the sales plan at about 33,9 px per metre and checked against the room areas.
+  // Salon interior is x 0–W, z 0–D; kitchen and balkon lie above it (z < 0), the stair core above the antre and hol,
+  // baths and ebeveyn to the right, yatak odası top right. The outline steps in and out where the plan does.
+  const W = 6.4, D = 3.85, H = 2.6, T = 0.1;
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
@@ -370,27 +371,30 @@ window.addEventListener('error', e => {
     piece(s, a1, 0, h);
   }
   // Outside walls
-  wall(-T, 0, -T, D + T, [-1, 0], [[1.1, 2.7, 'win']]);                      // salon window
-  wall(-T, 12.4, D, D + T, [0, 1]);
-  wall(12.3, 12.4, -3.4, D + T, [1, 0], [[-2.4, -1.1, 'win'], [1.2, 2.8, 'win']]); // yatak odası and ebeveyn windows
-  wall(9.1, 12.4, -3.4, -3.3, [0, -1]);
-  wall(9.1, 9.2, -3.3, -1.5, [-1, 0]);
-  wall(4.5, 9.2, -1.6, -1.5, [0, -1], [[5.7, 6.6, 'door']]);                  // entrance from the stair landing
-  wall(4.5, 4.6, -2.66, -1.6, [1, 0]);
-  wall(0.5, 4.6, -2.66, -2.56, [0, -1], [[1.8, 3.0, 'win']]);                // kitchen window
-  // Balcony parapet
-  wall(-1.5, 0.5, -2.66, -2.56, [0, -1], [], 1.0);
-  wall(-1.5, -1.4, -2.56, 0, [-1, 0], [], 1.0);
-  wall(-1.4, -T, -T, 0, [0, 1], [], 1.0);
+  wall(-T, 0, -0.15, D + T, [-1, 0], [[0.6, 2.6, 'win']]);                       // salon window
+  wall(-T, 13.49, D, D + T, [0, 1]);                                             // long back wall
+  wall(13.39, 13.49, 0.08, D, [1, 0], [[1.0, 2.6, 'win']]);                      // ebeveyn window
+  wall(13.39, 14.32, 0.08, 0.18, [0, 1]);                                        // step: yatak odası sticks out past the ebeveyn
+  wall(14.22, 14.32, -2.78, 0.18, [1, 0], [[-2.25, -0.9, 'win']]);               // yatak odası window
+  wall(10.24, 14.32, -2.78, -2.68, [0, -1]);
+  wall(0.76, 4.95, -2.84, -2.74, [0, -1], [[2.0, 3.2, 'win']]);                  // kitchen window
+  wall(4.85, 4.95, -4.41, -2.84, [-1, 0]);                                       // stair core, standing out above the flat
+  wall(4.85, 10.34, -4.41, -4.31, [0, -1]);
+  wall(10.24, 10.34, -4.41, -2.78, [1, 0]);
+  wall(4.95, 10.24, -1.22, -1.12, [0, -1], [[6.95, 7.85, 'door']]);              // entrance from the stair landing
+  // Balcony parapet (sticks out past the salon wall)
+  wall(-1.25, 0.76, -2.84, -2.74, [0, -1], [], 1.0);
+  wall(-1.25, -1.15, -2.74, -0.15, [-1, 0], [], 1.0);
+  wall(-1.25, -T, -0.25, -0.15, [0, 1], [], 1.0);
   // Inside walls
-  wall(0.5, 0.6, -2.56, -T, null, [[-1.9, -1.1, 'door']]);                   // kitchen–balkon
-  wall(-T, 6.2, -T, 0, null, [[4.7, 6.0, 'pass']]);                          // salon–antre arch
-  wall(4.5, 4.6, -1.5, -T, null, [[-1.3, -0.5, 'door']]);                    // kitchen door
-  wall(6.1, 6.2, 0, D);
-  wall(6.2, 12.3, 0, T, null, [[6.9, 7.6, 'door'], [8.35, 9.1, 'door']]);    // banyo and ebeveyn doors
-  wall(9.1, 9.2, -1.5, 0, null, [[-1.35, -0.55, 'door']]);                   // yatak odası door
-  wall(6.2, 8.2, 2.65, 2.75);
-  wall(8.2, 8.3, T, D, null, [[3.0, 3.65, 'door']]);                          // eb. banyo door
+  wall(0.76, 0.86, -2.74, -0.15, null, [[-1.5, -0.7, 'door']]);                  // kitchen–balkon
+  wall(-T, 6.4, -0.15, 0, null, [[5.52, 6.4, 'pass']]);                          // kitchen | salon, open to the antre at the right
+  wall(4.85, 4.95, -2.84, -0.15, null, [[-1.0, -0.2, 'door']]);                  // kitchen door to the antre
+  wall(6.4, 6.5, 0, D);                                                          // salon | baths
+  wall(6.4, 13.39, 0.08, 0.18, null, [[8.0, 8.7, 'door'], [9.25, 10.05, 'door']]); // hol | banyo, ebeveyn (banyo and ebeveyn doors)
+  wall(10.24, 10.34, -2.68, 0.08, null, [[-0.85, -0.1, 'door']]);                // hol | yatak odası
+  wall(6.5, 9.05, 2.33, 2.43);                                                   // banyo | eb. banyo
+  wall(9.05, 9.15, 0.18, D, null, [[2.95, 3.65, 'door']]);                       // baths | ebeveyn (eb. banyo door)
 
   // Door leaves, drawn open, with their swing on the floor: hinge point, closed direction c, open direction o, leaf length.
   const DOOR_SWINGS = [];
@@ -405,13 +409,13 @@ window.addEventListener('error', e => {
     scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), swingMat));
     DOOR_SWINGS.push({ x: hx, z: hz, r: L, sx: Math.sign(c[0] + o[0]), sz: Math.sign(c[1] + o[1]), name });
   }
-  door('giriş kapısının', 6.6, -1.5, [-1, 0], [0, 1], 0.9);
-  door('mutfak kapısının', 4.5, -1.3, [0, 1], [-1, 0], 0.8);
-  door('balkon kapısının', 0.6, -1.9, [0, 1], [1, 0], 0.8);
-  door('banyo kapısının', 6.9, T, [1, 0], [0, 1], 0.7);
-  door('ebeveyn kapısının', 9.1, T, [-1, 0], [0, 1], 0.75);
-  door('yatak odası kapısının', 9.2, -1.35, [0, 1], [1, 0], 0.8);
-  door('ebeveyn banyosu kapısının', 8.2, 3.0, [0, 1], [-1, 0], 0.65);
+  door('giriş kapısının', 6.95, -1.12, [1, 0], [0, 1], 0.9);
+  door('balkon kapısının', 0.86, -0.7, [0, -1], [1, 0], 0.8);
+  door('mutfak kapısının', 4.85, -0.2, [0, -1], [-1, 0], 0.8);
+  door('yatak odası kapısının', 10.34, -0.1, [0, -1], [1, 0], 0.75);
+  door('banyo kapısının', 8.0, 0.18, [1, 0], [0, 1], 0.7);
+  door('ebeveyn kapısının', 9.25, 0.18, [1, 0], [0, 1], 0.8);
+  door('ebeveyn banyosu kapısının', 9.15, 3.65, [0, -1], [1, 0], 0.7);
 
   // Rooms furniture can stand in; the salon first, the rest are added below.
   const PLACES = [{ name: 'Salon', x0: 0, x1: W, z0: 0, z1: D }];
@@ -443,34 +447,26 @@ window.addEventListener('error', e => {
       const v = new THREE.Mesh(new THREE.PlaneGeometry(rw, rd), M(0x3a3936, 1));
       v.rotation.x = -Math.PI / 2; v.position.set((x0 + x1) / 2, -0.002, (z0 + z1) / 2); scene.add(v); return;
     }
-    if (kind === 'balkon') {
-      const sh = new THREE.Shape(), c = 0.5;
-      [[x0, z0], [x1, z0], [x1, z1 - c], [x1 - c, z1], [x0, z1]].forEach(([x, z], i) => i ? sh.lineTo(x, -z) : sh.moveTo(x, -z));
-      const bf = new THREE.Mesh(new THREE.ShapeGeometry(sh), new THREE.MeshStandardMaterial({ map: tileTexture(1, 1, 0.4, '#a8a39b', '#857f76'), roughness: 0.7 }));
-      bf.rotation.x = -Math.PI / 2; bf.receiveShadow = true; scene.add(bf); return;
-    }
-    const map = kind === 'parke' ? plankTexture(rw, rd)
-      : kind === 'balkon' ? tileTexture(rw, rd, 0.4, '#a8a39b', '#857f76')
-      : tileTexture(rw, rd, 0.6, '#dcd9d3', '#b9b5ad');
+    const map = kind === 'parke' ? plankTexture(rw, rd) : tileTexture(rw, rd, 0.6, '#dcd9d3', '#b9b5ad');
     const f = new THREE.Mesh(new THREE.PlaneGeometry(rw, rd), new THREE.MeshStandardMaterial({ map, roughness: 0.7 }));
     f.rotation.x = -Math.PI / 2; f.position.set((x0 + x1) / 2, 0, (z0 + z1) / 2); f.receiveShadow = true; scene.add(f);
   }
-  // Rooms: [name, plan net area, floor, [x0, x1, z0, z1]]. Sizes are scaled from the plan.
-  [['Mutfak', '9,59 m²', 'tile', [0.6, 4.5, -2.56, -T]],
-   ['Balkon', '4,69 m²', 'tile', [-1.4, 0.5, -2.56, -T]],
-   ['Antre', '3,42 m²', 'tile', [4.6, 6.9, -1.5, 0]],
-   ['Hol', '2,47 m²', 'tile', [6.9, 9.1, -1.5, 0]],
-   ['Banyo', '5,10 m²', 'tile', [6.2, 8.2, T, 2.65]],
-   ['Eb. banyo', '2,82 m²', 'tile', [6.2, 8.2, 2.75, D]],
-   ['Ebeveyn', '15,87 m²', 'parke', [8.3, 12.3, T, D]],
-   ['Yatak odası', '10,24 m²', 'parke', [9.2, 12.3, -3.3, 0]]
+  // Rooms: [name, plan net area, floor, [x0, x1, z0, z1]]
+  [['Mutfak', '9,59 m²', 'tile', [0.86, 4.85, -2.74, -0.15]],
+   ['Balkon', '4,69 m²', 'tile', [-1.15, 0.76, -2.74, -0.25]],
+   ['Antre', '3,42 m²', 'tile', [4.95, 7.9, -1.12, 0]],
+   ['Hol', '2,47 m²', 'tile', [7.9, 10.24, -1.12, 0.08]],
+   ['Banyo', '5,10 m²', 'tile', [6.5, 9.05, 0.18, 2.33]],
+   ['Eb. banyo', '2,82 m²', 'tile', [6.5, 9.05, 2.43, D]],
+   ['Ebeveyn', '15,87 m²', 'parke', [9.15, 13.39, 0.18, D]],
+   ['Yatak odası', '10,24 m²', 'parke', [10.34, 14.22, -2.68, 0.08]]
   ].forEach(([name, dims, kind, r]) => {
     roomFloor(r[0], r[1], r[2], r[3], kind);
     PLACES.push({ name, x0: r[0], x1: r[1], z0: r[2], z1: r[3] });
     roomLabel(name, dims, (r[0] + r[1]) / 2, (r[2] + r[3]) / 2, r[1] - r[0] - 0.15);
   });
-  roomFloor(4.6, 9.1, -3.4, -1.6, 'void');
-  roomLabel('Merdiven', 'ortak alan', 6.85, -2.5, 1.5);
+  roomFloor(4.95, 10.24, -4.31, -1.22, 'void');
+  roomLabel('Merdiven', 'ortak alan', 7.6, -2.8, 1.5);
 
   // Built-in pieces from the plan (kitchen counter, bathroom fixtures). Furniture placed over them is flagged.
   const FIXTURES = [];
@@ -479,20 +475,22 @@ window.addEventListener('error', e => {
     FIXTURES.push({ name, x0, x1, z0, z1 });
     scene.add(box(x1 - x0, h, z1 - z0, m, (x0 + x1) / 2, 0, (z0 + z1) / 2));
   }
-  fixture('mutfak tezgâhı', 0.6, 3.85, -2.56, -1.96, 0.86, mat.white);
-  scene.add(box(3.25, 0.04, 0.62, counterTop, 2.225, 0.86, -2.25));
-  scene.add(box(0.6, 0.01, 0.45, mat.dark, 3.2, 0.9, -2.27));
-  scene.add(box(0.7, 0.01, 0.42, steel, 2.4, 0.9, -2.28));
-  [[0.6, 1.8], [3.0, 3.85]].forEach(([a, b]) => scene.add(box(b - a, 0.7, 0.35, mat.white, (a + b) / 2, 1.45, -2.385)));
-  fixture('buzdolabı', 3.85, 4.5, -2.56, -1.91, 1.85, steel);
-  fixture('küvet', 6.2, 6.9, 0.85, 2.55, 0.55, white);
-  fixture('lavabo', 7.75, 8.2, 0.55, 1.15, 0.85, white);
-  fixture('klozet', 7.65, 8.2, 1.75, 2.13, 0.4, white);
-  scene.add(box(0.18, 0.4, 0.38, white, 8.11, 0.4, 1.94));
-  fixture('duş', 6.2, 7.0, 3.24, D, 0.05, white);
-  const showerGlass = box(0.8, 1.9, 0.02, mat.glass, 6.6, 0.05, 3.25); showerGlass.castShadow = false; scene.add(showerGlass);
-  fixture('klozet', 7.15, 7.53, 3.49, D, 0.4, white);
-  scene.add(box(0.38, 0.4, 0.18, white, 7.34, 0.4, 3.95));
+  fixture('mutfak tezgâhı', 0.86, 4.2, -2.74, -2.14, 0.86, mat.white);
+  scene.add(box(3.34, 0.04, 0.62, counterTop, 2.53, 0.86, -2.43));
+  scene.add(box(0.6, 0.01, 0.45, mat.dark, 1.6, 0.9, -2.45));
+  scene.add(box(0.7, 0.01, 0.42, steel, 2.6, 0.9, -2.46));
+  [[0.86, 2.0], [3.2, 4.2]].forEach(([a, b]) => scene.add(box(b - a, 0.7, 0.35, mat.white, (a + b) / 2, 1.45, -2.565)));
+  fixture('buzdolabı', 4.2, 4.85, -2.74, -2.09, 1.85, steel);
+  fixture('duş', 6.5, 7.4, 0.18, 1.1, 0.05, white);
+  const glassA = box(0.9, 1.9, 0.02, mat.glass, 6.95, 0.05, 1.1); glassA.castShadow = false; scene.add(glassA);
+  fixture('lavabo', 8.6, 9.05, 0.9, 1.5, 0.85, white);
+  fixture('klozet', 6.5, 6.88, 1.6, 2.15, 0.4, white);
+  scene.add(box(0.18, 0.4, 0.38, white, 6.59, 0.4, 1.87));
+  fixture('duş', 6.5, 7.3, 3.05, D, 0.05, white);
+  const glassB = box(0.8, 1.9, 0.02, mat.glass, 6.9, 0.05, 3.06); glassB.castShadow = false; scene.add(glassB);
+  fixture('lavabo', 8.6, 9.05, 2.5, 2.95, 0.85, white);
+  fixture('klozet', 7.8, 8.18, 3.3, D, 0.4, white);
+  scene.add(box(0.38, 0.4, 0.18, white, 7.99, 0.4, 3.76));
 
   // Furniture builders. Local front faces +z, width along x.
   function sofa(Wd, f) {
@@ -876,13 +874,13 @@ window.addEventListener('error', e => {
   // Default layout: rectangle in cm in house coordinates (x to the right, y down the plan; salon is 0–610 × 0–404) and rotation
   // (0 faces down the plan, 1 faces right, 2 faces up, 3 faces left)
   const DEFAULT = [
-    ['tvset', 70, 0, 370, 42, 0], ['sofa3', 100, 303, 333, 404, 2], ['sofa2', 0, 100, 101, 297, 1],
-    ['sehpa', 160, 170, 280, 230, 0],
-    ['table', 460, 140, 550, 300, 1],
-    ['chair', 405, 160, 460, 208.5, 1], ['chair', 405, 230, 460, 278.5, 1],
-    ['chair', 550, 160, 605, 208.5, 3], ['chair', 550, 230, 605, 278.5, 3],
-    ['karyola', 940, 178, 1115, 404, 2], ['komodin', 884, 358, 940, 404, 2], ['komodin', 1115, 358, 1171, 404, 2],
-    ['dolap4', 1035, 10, 1222.2, 73.4, 0], ['sifonyer', 830, 130, 876, 228.4, 1]
+    ['tvset', 70, 0, 370, 42, 0], ['sofa3', 100, 284, 333, 385, 2], ['sofa2', 0, 90, 101, 287, 1],
+    ['sehpa', 160, 160, 280, 220, 0],
+    ['table', 470, 130, 560, 290, 1],
+    ['chair', 415, 150, 470, 198.5, 1], ['chair', 415, 220, 470, 268.5, 1],
+    ['chair', 560, 150, 615, 198.5, 3], ['chair', 560, 220, 615, 268.5, 3],
+    ['karyola', 1052.5, 159, 1227.5, 385, 2], ['komodin', 996.5, 339, 1052.5, 385, 2], ['komodin', 1227.5, 339, 1283.5, 385, 2],
+    ['dolap4', 1100, -268, 1287.2, -204.6, 0], ['sifonyer', 915, 100, 961, 198.4, 1]
   ];
   // New key for the new flat: layouts saved for the previous house do not fit these rooms.
   const STORE_KEY = 'bohemia-ac-blok-layout-v1';
@@ -1522,11 +1520,11 @@ window.addEventListener('error', e => {
   // Lights
   scene.add(new THREE.HemisphereLight(0xffffff, 0x8a6a50, 0.6));
   // A ceiling light in each main room
-  [[W / 2, D / 2], [2.55, -1.33], [10.3, 2.07], [10.75, -1.65], [7.0, -0.75], [7.2, 2.0]].forEach(([x, z]) => {
+  [[W / 2, D / 2], [2.85, -1.45], [11.27, 2.0], [12.28, -1.3], [7.4, -0.55], [7.8, 1.25]].forEach(([x, z]) => {
     const l = new THREE.PointLight(0xfff0dc, 0.45, 7); l.position.set(x, H - 0.2, z); scene.add(l);
   });
   const sun = new THREE.DirectionalLight(0xfff4e2, 1.0);
-  sun.position.set(-3, 9, 8); sun.target.position.set(5.45, 0, 0.37);
+  sun.position.set(-3, 9, 8); sun.target.position.set(6.5, 0, -0.23);
   sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
   Object.assign(sun.shadow.camera, { left: -9, right: 9, top: 9, bottom: -9, near: 0.5, far: 30 });
   sun.shadow.bias = -0.0006;
@@ -1544,7 +1542,7 @@ window.addEventListener('error', e => {
     persp: () => ({ pos: [-1.4, 5.2, 8.4], target: [W / 2, 0.5, D / 2] }),
     top: () => ({ pos: [W / 2, fitH(W + 0.4, D + 0.4), D / 2 + 0.01], target: [W / 2, 0, D / 2] }),
     eye: eyeView,
-    house: () => ({ pos: [5.45, fitH(14.2, 7.8), 0.38], target: [5.45, 0, 0.37] })
+    house: () => ({ pos: [6.5, fitH(16.2 * 1.3, 8.9 * 1.3), -0.22], target: [6.5, 0, -0.23] }) // extra room: wall tops sit closer to the camera
   };
   let tween = null;
   function goTo(key, instant) {
