@@ -80,6 +80,8 @@ select { padding-right: 10px; max-width: 100%; }
 .legend { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 0 24px; margin: 0; padding: 0; list-style: none; }
 .legend li { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 14px; min-width: 0; }
 .legend li span:last-child { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.plan-total { margin: 0; font-size: 15px; font-variant-numeric: tabular-nums; }
+.plan-total .m { color: var(--muted); font-size: 13px; }
 .note { color: var(--muted); font-size: 13px; margin: 0; max-width: 75ch; }
 .err { padding: 24px; color: var(--muted); }
 .start-err { position: absolute; left: 12px; right: 12px; top: 56px; z-index: 3; margin: 0; padding: 10px 14px; background: var(--surface); color: var(--danger); border: 1px solid var(--danger); border-radius: 10px; font-size: 13px; }
@@ -94,7 +96,7 @@ dialog.io .msg.bad { color: var(--danger); }
 .fs-btn { position: absolute; left: 12px; top: 12px; z-index: 2; }
 body.full { overflow: hidden; }
 body.full .wrap { position: fixed; inset: 0; z-index: 10; max-width: none; padding: 10px max(10px, env(safe-area-inset-right, 0px)) 10px max(10px, env(safe-area-inset-left, 0px)); background: var(--bg); grid-template-rows: auto 1fr; }
-body.full header, body.full .legend, body.full .note, body.full .cat { display: none; }
+body.full header, body.full .legend, body.full .plan-total, body.full .note, body.full .cat { display: none; }
 body.full .stage { height: auto; min-height: 0; }
 .cat { display: grid; gap: 10px; margin-top: 6px; }
 .cat-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
@@ -164,6 +166,7 @@ dialog.io .pf textarea { height: 70px; font: 14px var(--font-body); }
   </div>
 
   <ul class="legend" id="legend"></ul>
+  <p class="plan-total" id="plan-total" role="status"></p>
 
   <section class="cat" aria-labelledby="cat-title">
     <div class="cat-head">
@@ -1384,6 +1387,23 @@ window.addEventListener('error', e => {
     billy: { name: 'Köşe kitaplık (meşe)', dims: '96,3/96,3 × 28 × 202 cm', w: 0.963, d: 0.963, make: billyCorner,
       parts: [[-0.4815, 0.4815, -0.4815, -0.2015], [-0.4815, -0.2015, -0.2015, 0.4815], [-0.2015, 0.07, -0.2015, 0.07]] }
   };
+  // Kelebek list prices (Satış Fiyatı, before basket discounts) and product pages, read on kelebek.com on 28.11.2026.
+  // Karyola = başlıksız karyola 13.489,08 + başlık 19.588,67. Berjer = Bohemia ahşap kollu berjer. Orta sehpa, zigon sehpa and kitaplık had no price on the site.
+  const KB = 'https://www.kelebek.com/';
+  const PRICES = {
+    karyola: [33077.75, KB + 'bohemia-basliksiz-karyola-160-cm-sonil-dokulu-ekru-3200424244'],
+    komodin: [6389.56, KB + 'bohemia-komodin-3200424243'], sifonyer: [15188.97, KB + 'bohemia-genis-sifonyer-3200424249'],
+    darsifonyer: [14888.98, KB + 'bohemia-dar-sifonyer-3200424248'],
+    dolap4: [26688.18, KB + 'bohemia-4-kapakli-dolap-sonil-dokulu-ekru-3200424250'], dolap5: [36737.49, KB + 'bohemia-5-kapakli-dolap-sonil-dokulu-ekru-3200424251'],
+    dolap6: [41287.18, KB + 'bohemia-6-kapakli-dolap-sonil-dokulu-ekru-3200424252'],
+    dresuar: [11789.20, KB + 'bohemia-dresuar-makyaj-masasi-3200424242'], ayna: [2589.82, KB + 'bohemia-ayna-sonil-dokulu-ekru-3200424256'],
+    benchpuf: [7689.31, KB + 'bohemia-bench-puf-sonil-dokulu-ekru-3200424259'], makyajpuf: [6589.55, KB + 'bohemia-makyaj-masasi-puf-sonil-dokulu-ekru-3200424260'],
+    sofa2: [42724.63, KB + 'bohemia-ikili-yatakli-koltuk-sonil-dokulu-ekru-3120024848'], sofa3: [47569.05, KB + 'bohemia-uclu-yatakli-koltuk-sonil-dokulu-ekru-3120024845'],
+    berjer: [18110.05, KB + 'bohemia-ahsap-kollu-berjer-sonil-dokulu-ekru-turuncu-3120024846'],
+    konsol: [22187.99, KB + 'bohemia-konsol-3200424237'], table: [20688.13, KB + 'bohemia-acilir-masa-3200424239'],
+    chair: [8589.22, KB + 'bohemia-sandalye-sonil-dokulu-ekru-3120025282']
+  };
+  Object.entries(PRICES).forEach(([k, [p, url]]) => { if (CATALOG[k]) { if (CATALOG[k].price == null) CATALOG[k].price = p; if (!CATALOG[k].url) CATALOG[k].url = url; } });
   Object.keys(CATALOG).forEach(k => { CATALOG[k].brand = ['tvset', 'besta240', 'tvduvar', 'lamba'].includes(k) ? 'IKEA' : ['camasir', 'kurutma', 'kule'].includes(k) ? 'Arçelik' : k === 'billy' ? 'Diğer' : 'Kelebek Bohemia'; });
 
   // Brand products added by the household. Each is drawn with the shape of its type, sized to its own measurements (cm).
@@ -1740,9 +1760,17 @@ window.addEventListener('error', e => {
       const li = document.createElement('li');
       const n = document.createElement('span');
       n.textContent = (counts[k] > 1 ? counts[k] + ' × ' : '') + CATALOG[type].name + (col ? ', ' + FAB[col].name.toLocaleLowerCase('tr') : '');
-      const d = document.createElement('span'); d.textContent = CATALOG[type].dims;
+      const c = CATALOG[type], d = document.createElement('span');
+      d.textContent = c.dims + (c.price != null ? ' · ' + tl(c.price * counts[k]) : '');
       li.append(n, d); ul.append(li);
     });
+    // Total price of what stands in this house
+    let sum = 0, priced = 0; const unknown = new Set();
+    items.forEach(it => { const c = CATALOG[it.type]; if (c.price != null) { sum += c.price; priced++; } else unknown.add(c.pname || c.name); });
+    const tot = document.getElementById('plan-total'); tot.innerHTML = '';
+    if (items.length) {
+      tot.append(el('b', null, 'Plandaki eşyaların toplamı: ' + tl(sum)), el('span', 'm', ' · ' + priced + ' parça, liste fiyatıyla (sepet indirimleri hariç)' + (unknown.size ? '; fiyatı olmayan: ' + [...unknown].join(', ') : '')));
+    }
     renderCatalog();
   }
   const rotBtn = document.getElementById('rot-btn'), delBtn = document.getElementById('del-btn');
