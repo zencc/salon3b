@@ -1311,6 +1311,17 @@ window.addEventListener('error', e => {
     const g = new THREE.Group(); appliance(g, 0, 0.58, false);
     g.add(box(0.6, 0.02, 0.58, applWhite, 0, 0.85, -0.305 + 0.29)); appliance(g, 0.87, 0.61, true); return g;
   }
+  // Bohemia makyaj masası pufu Ø 45 × 46: three rounded upholstered rings stacked on a low oak base (şönil, ekru by default)
+  function vanityPouf(f) {
+    const mat = withFabric(f), g = new THREE.Group();
+    g.add(cyl(0.19, 0.19, 0.04, mat.oak, 0, 0, 0));
+    const pts = [];
+    for (let i = 0; i <= 16; i++) { const a = -Math.PI / 2 + i / 16 * Math.PI; pts.push(new THREE.Vector2(0.19 + Math.cos(a) * 0.035, 0.07 + Math.sin(a) * 0.07)); }
+    pts.unshift(new THREE.Vector2(0, 0)); pts.push(new THREE.Vector2(0, 0.14));
+    const ringGeo = new THREE.LatheGeometry(pts, 40);
+    for (let k = 0; k < 3; k++) { const m = new THREE.Mesh(ringGeo, mat.fabric); m.position.y = 0.04 + k * 0.14; g.add(shade(m)); }
+    return g;
+  }
   function coffeeTable() {
     const g = new THREE.Group();
     g.add(box(1.2, 0.03, 0.6, mat.white, 0, 0.37, 0));
@@ -1330,6 +1341,7 @@ window.addEventListener('error', e => {
     dresuar: { name: 'Dresuar / makyaj masası', dims: '100 × 46 × 81 cm', w: 1.0, d: 0.46, make: dresuar },
     lamba: { name: 'Lambader (abajurlu)', dims: 'Ø 42 × 153 cm, taban Ø 29', w: 0.29, d: 0.29, make: floorLamp },
     ayna: { name: 'Ayna (duvara)', dims: '54 × 2,2 × 70 cm', w: 0.54, d: 0.022, wall: true, make: ayna },
+    makyajpuf: { name: 'Makyaj masası pufu', dims: 'Ø 45 × 46 cm', w: 0.45, d: 0.45, fabric: true, make: it => vanityPouf(it.color) },
     benchpuf: { name: 'Bench puf', dims: '110 × 45 × 45 cm', w: 1.1, d: 0.45, fabric: true, make: it => benchPuf(it.color) },
     sofa2: { name: "2'li koltuk (yataklı)", dims: '197 × 101 × 76,5 cm', w: 1.97, d: 1.01, fabric: true, make: it => sofa(1.97, it.color) },
     sofa3: { name: "3'lü koltuk (yataklı)", dims: '233 × 101 × 76,5 cm', w: 2.33, d: 1.01, fabric: true, make: it => sofa(2.33, it.color) },
@@ -1364,7 +1376,7 @@ window.addEventListener('error', e => {
     shelf: { name: 'Kitaplık / raf', def: [120, 38, 170] },
     box: { name: 'Diğer', def: [100, 50, 50] }
   };
-  Object.entries({ karyola: 'bed', komodin: 'cabinet', sifonyer: 'cabinet', dolap4: 'cabinet', dolap5: 'cabinet', dolap6: 'cabinet', dresuar: 'table', ayna: 'box', lamba: 'box', tvduvar: 'cabinet', besta240: 'cabinet', benchpuf: 'pouf', sofa2: 'sofa', sofa3: 'sofa', berjer: 'armchair',
+  Object.entries({ karyola: 'bed', komodin: 'cabinet', sifonyer: 'cabinet', dolap4: 'cabinet', dolap5: 'cabinet', dolap6: 'cabinet', dresuar: 'table', ayna: 'box', lamba: 'box', tvduvar: 'cabinet', besta240: 'cabinet', benchpuf: 'pouf', makyajpuf: 'pouf', sofa2: 'sofa', sofa3: 'sofa', berjer: 'armchair',
     sehpa: 'coffee', zigon: 'coffee', camasir: 'box', kurutma: 'box', kule: 'box', tvset: 'cabinet', kitaplik: 'shelf', table: 'table', chair: 'chair', konsol: 'cabinet', billy: 'shelf' }).forEach(([k, s]) => { if (CATALOG[k]) CATALOG[k].shape = s; });
   function scaled(g, bw, bd, bh, w, d, h) { g.scale.set(w / bw, h / bh, d / bd); return g; }
   function makeShape(p, f) {
