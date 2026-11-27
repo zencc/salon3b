@@ -457,8 +457,9 @@ window.addEventListener('error', e => {
       bf.rotation.x = -Math.PI / 2; bf.receiveShadow = true; hg.add(bf); floorRects.push({ x0, x1, z0, z1 }); return;
     }
     const map = kind === 'parke' ? plankTexture(rw, rd) : kind === 'parke-acik' ? plankTexture(rw, rd, 'light')
-      : kind === 'seramik' ? plankTexture(rw, rd, 'porcelain') : tileTexture(rw, rd, 0.6, '#dcd9d3', '#b9b5ad');
-    const f = new THREE.Mesh(new THREE.PlaneGeometry(rw, rd), new THREE.MeshStandardMaterial({ map, roughness: kind === 'seramik' ? 0.16 : kind === 'tile' ? 0.45 : 0.55 }));
+      : kind === 'seramik' ? plankTexture(rw, rd, 'porcelain') : kind === 'tile-krem' ? tileTexture(rw, rd, 0.6, '#e9e2d4', '#d3cab9')
+      : tileTexture(rw, rd, 0.6, '#dcd9d3', '#b9b5ad');
+    const f = new THREE.Mesh(new THREE.PlaneGeometry(rw, rd), new THREE.MeshStandardMaterial({ map, roughness: kind === 'seramik' ? 0.16 : kind.startsWith('tile') ? 0.45 : 0.55 }));
     f.rotation.x = -Math.PI / 2; f.position.set((x0 + x1) / 2, 0, (z0 + z1) / 2); f.receiveShadow = true; hg.add(f);
     floorRects.push({ x0, x1, z0, z1 });
   }
@@ -745,7 +746,7 @@ window.addEventListener('error', e => {
     wall(-T, W, kz1, 0, null, [[W - 1.0, W - 0.1, 'door']]);                       // kitchen | salon; glazed salon door to the antre
     wall(kx1, kx1 + T, top - T, kz1, null, [[-1.0, -0.2, 'door']]);                // kitchen door to the antre
     wall(W, W + T, 0, D);                                                          // salon | baths
-    wall(W, ex1, yz1, e0, null, [[bx1 - 0.75, bx1 - 0.05, 'door'], [ex0 + 0.02, ex0 + 0.75, 'door']]); // hol | banyo, ebeveyn
+    wall(W, ex1, yz1, e0, null, [[bx1 - 0.8, bx1 - 0.05, 'door'], [ex0 + 0.02, ex0 + 0.75, 'door']]); // hol | banyo, ebeveyn
     wall(hx1, hx1 + T, yz0, yz1, null, [[-0.85, -0.1, 'door']]);                   // hol | yatak odası
     wall(bx0, bx1, bz1, ebz0);                                                     // banyo | eb. banyo
     wall(bx1, bx1 + T, e0, D, null, [[D - 1.17, D - 0.42, 'door']]);               // baths | ebeveyn (eb. banyo door, right beside the corner pier)
@@ -756,7 +757,7 @@ window.addEventListener('error', e => {
     door(ctx, 'salon kapısının', W - 0.1, 0.3, [-1, 0], [0, 1], 0.9);              // set in the corner block, so it opens 30 cm into the room
     door(ctx, 'mutfak kapısının', kx1, -0.2, [0, -1], [-1, 0], 0.8);
     door(ctx, 'yatak odası kapısının', yx0, -0.1, [0, -1], [1, 0], 0.75);
-    door(ctx, 'banyo kapısının', bx1 - 0.75, e0, [1, 0], [0, 1], 0.7);
+    door(ctx, 'banyo kapısının', bx1 - 0.05, e0, [-1, 0], [0, 1], 0.75);       // hinged on the ebeveyn side, opens against that wall (photos)
     door(ctx, 'ebeveyn kapısının', ex0 + 0.02, e0, [1, 0], [0, 1], 0.73);
     door(ctx, 'ebeveyn banyosu kapısının', bx1 + T, D - 0.42, [0, -1], [1, 0], 0.75);
 
@@ -766,8 +767,8 @@ window.addEventListener('error', e => {
       ['Balkon', m2(A.balkon), 'tile', [[balX0, kx0 - T, top, balZ1]]],
       ['Antre', m2(A.antre), 'seramik', [[aSplit, ax1, -aDeep, 0], [ax0, aSplit, -aShallow, 0]]],
       ['Hol', m2(A.hol), 'seramik', [[ax1, hx1, holZ0, yz1]]],
-      ['Banyo', m2(A.banyo), 'tile', [[bx0, bx1, e0, bz1]]],
-      ['Eb. banyo', m2(A.ebBanyo), 'tile', [[bx0, bx1, ebz0, D]]],
+      ['Banyo', m2(A.banyo), 'tile-krem', [[bx0, bx1, e0, bz1]]],
+      ['Eb. banyo', m2(A.ebBanyo), 'tile-krem', [[bx0, bx1, ebz0, D]]],
       ['Ebeveyn', m2(A.ebeveyn), 'parke-acik', [[ex0, ex1, e0, D]]],
       ['Yatak odası', m2(A.yatak), 'parke-acik', [[yx0, yx1, yz0, yz1]]]
     ]);
@@ -782,7 +783,7 @@ window.addEventListener('error', e => {
     fixture(ctx, 'kolon', ex0, ex0 + 0.4, D - 0.37, D, H, mat.wall);               // ebeveyn, dark wall meets the door wall
     fixture(ctx, 'kolon', ex1 - 0.3, ex1, D - 0.25, D, H, mat.wall);               // ebeveyn, window end of the dark wall
     fixture(ctx, 'duvar çıkıntısı', yx0, yx0 + 0.3, yz0, yz0 + 1.73, H, mat.wall); // yatak odası, beside the door
-    fixture(ctx, 'portmanto', W + 0.15, W + 1.35, -0.4, yz1, 2.4, lightOak);       // past the salon door, before the banyo door
+    fixture(ctx, 'portmanto', W + 0.1, W + 1.2, -0.4, yz1, 2.4, lightOak);       // past the salon door, before the banyo door
     // Kitchen: counter along the long wall, tall fridge cupboard at the door end
     const kc = kx1 - 0.65;
     fixture(ctx, 'mutfak tezgâhı', kx0, kc, top, top + 0.6, 0.86, mat.white);
@@ -791,12 +792,22 @@ window.addEventListener('error', e => {
     hg.add(box(0.7, 0.01, 0.42, steel, kx0 + 1.9, 0.9, top + 0.25));
     [[kx0, kx0 + 1.15], [kx0 + 2.3, kc]].forEach(([a, b]) => hg.add(box(b - a, 0.7, 0.35, mat.white, (a + b) / 2, 1.45, top + 0.175)));
     fixture(ctx, 'buzdolabı', kc, kx1, top, top + 0.65, 1.85, steel);
-    // Banyo
-    fixture(ctx, 'duş', bx0, bx0 + 0.9, e0 + 0.9, e0 + 1.82, 0.05, white);
-    glassPanel(0.9, 0.02, bx0 + 0.45, e0 + 0.9);
-    fixture(ctx, 'lavabo', bx0, bx0 + 0.45, e0 + 0.1, e0 + 0.7, 0.85, white);
-    fixture(ctx, 'klozet', bx0, bx0 + 0.38, bz1 - 0.6, bz1 - 0.05, 0.4, white);
-    hg.add(box(0.18, 0.4, 0.38, white, bx0 + 0.09, 0.4, bz1 - 0.325));
+    // Banyo (listing photos): wall-hung white vanity with a mirror cabinet on the ebeveyn-side wall, just past the door leaf;
+    // a glass shower cabin with dark tiles against the salon wall; a wall-hung WC on the far wall beside a dark patterned tile strip.
+    const darkTile = M(0x3a3633, 0.5), decor = M(0x5a4c40, 0.45, { metalness: 0.2 });
+    fixture(ctx, 'lavabo', bx1 - 0.46, bx1, 1.0, 1.8, 0.0, white);
+    hg.add(box(0.46, 0.4, 0.8, white, bx1 - 0.23, 0.45, 1.4));                    // vanity unit, floating
+    hg.add(box(0.48, 0.03, 0.82, white, bx1 - 0.24, 0.85, 1.4));                  // basin top
+    hg.add(box(0.14, 0.6, 0.8, white, bx1 - 0.07, 1.3, 1.4));                     // mirror cabinet
+    const mirrorB = box(0.004, 0.56, 0.38, mirrorMat, bx1 - 0.142, 1.32, 1.205); hg.add(mirrorB);
+    hg.add(box(0.004, 0.56, 0.38, mirrorMat, bx1 - 0.142, 1.32, 1.595));
+    fixture(ctx, 'duş', bx0, bx0 + 0.9, 0.9, 1.8, 0.05, white);
+    glassPanel(0.9, 0.02, bx0 + 0.45, 0.9); glassPanel(0.02, 0.9, bx0 + 0.9, 1.35);
+    hg.add(box(0.006, 2.1, 0.9, darkTile, bx0 + 0.003, 0, 1.35));                  // dark tiles inside the shower
+    fixture(ctx, 'klozet', bx0 + 0.95, bx0 + 1.33, bz1 - 0.55, bz1, 0.0, white);
+    hg.add(box(0.38, 0.36, 0.55, white, bx0 + 1.14, 0.06, bz1 - 0.275));          // wall-hung WC
+    hg.add(box(0.2, 0.14, 0.01, steel, bx0 + 1.14, 1.0, bz1 - 0.005));            // flush plate
+    hg.add(box(0.5, 2.35, 0.006, decor, bx0 + 1.65, 0, bz1 - 0.003));             // dark patterned tile strip
     // Eb. banyo: shower, washbasin and WC along the back wall, so the door on the ebeveyn side stays clear
     fixture(ctx, 'duş', bx0, bx0 + 0.8, D - 0.8, D, 0.05, white);
     glassPanel(0.8, 0.02, bx0 + 0.4, D - 0.79);
