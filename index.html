@@ -803,14 +803,15 @@ window.addEventListener('error', e => {
     hg.add(box(0.004, 0.56, 0.38, mirrorMat, bx1 - 0.142, 1.32, 1.595));
     // Salon-side wall (on the right as you come in): a long shower cabin (about 80 × 120) starting at the door wall, dark tiles on
     // both its walls; where it ends, the wall-hung WC on the same wall. The dark patterned tile strip is on the far wall.
-    const shz1 = e0 + 1.2;
+    // Shower 80 × 160 from the door wall; the WC centred 45 cm from the far wall, so it sits close to that corner.
+    const shL = 1.6, shz1 = e0 + shL, wcz = bz1 - 0.45;
     fixture(ctx, 'duş', bx0, bx0 + 0.8, e0, shz1, 0.05, white);
-    glassPanel(0.02, 1.2, bx0 + 0.8, e0 + 0.6); glassPanel(0.8, 0.02, bx0 + 0.4, shz1);
-    hg.add(box(0.006, 2.1, 1.2, darkTile, bx0 + 0.003, 0, e0 + 0.6));              // dark tiles inside the shower
+    glassPanel(0.02, shL, bx0 + 0.8, e0 + shL / 2); glassPanel(0.8, 0.02, bx0 + 0.4, shz1);
+    hg.add(box(0.006, 2.1, shL, darkTile, bx0 + 0.003, 0, e0 + shL / 2));          // dark tiles inside the shower
     hg.add(box(0.8, 2.1, 0.006, darkTile, bx0 + 0.4, 0, e0 + 0.003));
-    fixture(ctx, 'klozet', bx0, bx0 + 0.55, shz1 + 0.1, shz1 + 0.48, 0.0, white);
-    hg.add(box(0.55, 0.36, 0.38, white, bx0 + 0.275, 0.06, shz1 + 0.29));         // wall-hung WC
-    hg.add(box(0.01, 0.14, 0.2, steel, bx0 + 0.005, 1.0, shz1 + 0.29));           // flush plate
+    fixture(ctx, 'klozet', bx0, bx0 + 0.55, wcz - 0.19, wcz + 0.19, 0.0, white);
+    hg.add(box(0.55, 0.36, 0.38, white, bx0 + 0.275, 0.06, wcz));                 // wall-hung WC
+    hg.add(box(0.01, 0.14, 0.2, steel, bx0 + 0.005, 1.0, wcz));                   // flush plate
     hg.add(box(0.5, 2.35, 0.006, decor, bx0 + 1.15, 0, bz1 - 0.003));             // dark patterned tile strip on the far wall
     // Eb. banyo: shower, washbasin and WC along the back wall, so the door on the ebeveyn side stays clear
     fixture(ctx, 'duş', bx0, bx0 + 0.8, D - 0.8, D, 0.05, white);
