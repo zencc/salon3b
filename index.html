@@ -1683,9 +1683,11 @@ window.addEventListener('error', e => {
     });
     return hit;
   }
-  // Chairs slide under anything shaped like a table: the dining table, the dresuar, and brand tables added to the catalog.
+  // Anything shaped like a table: the dining table, the dresuar, and brand tables added to the catalog.
   const shapeOf = it => CATALOG[it.type] && CATALOG[it.type].shape;
-  const tucks = (a, b) => (shapeOf(a) === 'chair' && shapeOf(b) === 'table') || (shapeOf(a) === 'table' && shapeOf(b) === 'chair');
+  // Chairs and poufs (makyaj masası pufu, bench puf) slide under table-shaped pieces.
+  const under = it => shapeOf(it) === 'chair' || shapeOf(it) === 'pouf';
+  const tucks = (a, b) => (under(a) && shapeOf(b) === 'table') || (shapeOf(a) === 'table' && under(b));
   function problems(it) {
     const list = [];
     const onWall = x => !!CATALOG[x.type].wall;
