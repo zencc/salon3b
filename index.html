@@ -801,15 +801,17 @@ window.addEventListener('error', e => {
     hg.add(box(0.14, 0.6, 0.8, white, bx1 - 0.07, 1.3, 1.4));                     // mirror cabinet
     const mirrorB = box(0.004, 0.56, 0.38, mirrorMat, bx1 - 0.142, 1.32, 1.205); hg.add(mirrorB);
     hg.add(box(0.004, 0.56, 0.38, mirrorMat, bx1 - 0.142, 1.32, 1.595));
-    // Shower in the far corner against the salon-side wall (on the right when you come in); the WC right after it on the far wall
-    fixture(ctx, 'duş', bx0, bx0 + 0.9, bz1 - 0.9, bz1, 0.05, white);
-    glassPanel(0.9, 0.02, bx0 + 0.45, bz1 - 0.9); glassPanel(0.02, 0.9, bx0 + 0.9, bz1 - 0.45);
-    hg.add(box(0.006, 2.1, 0.9, darkTile, bx0 + 0.003, 0, bz1 - 0.45));            // dark tiles inside the shower
-    hg.add(box(0.9, 2.1, 0.006, darkTile, bx0 + 0.45, 0, bz1 - 0.003));
-    fixture(ctx, 'klozet', bx0 + 0.95, bx0 + 1.33, bz1 - 0.55, bz1, 0.0, white);
-    hg.add(box(0.38, 0.36, 0.55, white, bx0 + 1.14, 0.06, bz1 - 0.275));          // wall-hung WC
-    hg.add(box(0.2, 0.14, 0.01, steel, bx0 + 1.14, 1.0, bz1 - 0.005));            // flush plate
-    hg.add(box(0.5, 2.35, 0.006, decor, bx0 + 1.65, 0, bz1 - 0.003));             // dark patterned tile strip
+    // From the photos of the mirror-image flat's bathroom: a long rectangular shower cabin (about 80 × 120) along the salon-side wall
+    // (on the right as you come in) running into the far corner, dark tiles on both its walls; the WC on the far wall right after it,
+    // then the dark patterned tile strip.
+    fixture(ctx, 'duş', bx0, bx0 + 0.8, bz1 - 1.2, bz1, 0.05, white);
+    glassPanel(0.8, 0.02, bx0 + 0.4, bz1 - 1.2); glassPanel(0.02, 1.2, bx0 + 0.8, bz1 - 0.6);
+    hg.add(box(0.006, 2.1, 1.2, darkTile, bx0 + 0.003, 0, bz1 - 0.6));             // dark tiles inside the shower
+    hg.add(box(0.8, 2.1, 0.006, darkTile, bx0 + 0.4, 0, bz1 - 0.003));
+    fixture(ctx, 'klozet', bx0 + 0.88, bx0 + 1.26, bz1 - 0.55, bz1, 0.0, white);
+    hg.add(box(0.38, 0.36, 0.55, white, bx0 + 1.07, 0.06, bz1 - 0.275));          // wall-hung WC
+    hg.add(box(0.2, 0.14, 0.01, steel, bx0 + 1.07, 1.0, bz1 - 0.005));            // flush plate
+    hg.add(box(0.5, 2.35, 0.006, decor, bx0 + 1.6, 0, bz1 - 0.003));              // dark patterned tile strip
     // Eb. banyo: shower, washbasin and WC along the back wall, so the door on the ebeveyn side stays clear
     fixture(ctx, 'duş', bx0, bx0 + 0.8, D - 0.8, D, 0.05, white);
     glassPanel(0.8, 0.02, bx0 + 0.4, D - 0.79);
