@@ -1002,17 +1002,17 @@ window.addEventListener('error', e => {
       const edge = -Wd / 2 + dw * (i + 1);
       knob(edge - 0.035); knob(edge + 0.035);
     }
-    if (mid >= 0) {
-      const cx = -Wd / 2 + dw * (mid + 0.5);
-      knob(cx - dw / 2 + 0.04);
-      if (mirror) {
-        const mw = dw * 0.56, r = mw / 2, y0 = base + 0.2, y1 = base + bodyH - 0.12, sh = new THREE.Shape();
-        sh.moveTo(-r, 0); sh.lineTo(r, 0); sh.lineTo(r, y1 - y0 - r);
-        sh.absarc(0, y1 - y0 - r, r, 0, Math.PI, false); sh.lineTo(-r, 0);
-        const glass = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: 0.004, bevelEnabled: false, curveSegments: 24 }), mirrorMat);
-        glass.position.set(cx, y0, Dp / 2); g.add(glass);
-      }
-    }
+    if (mid >= 0) knob(-Wd / 2 + dw * mid + 0.04);
+    // Arch-topped mirrors: mirror = true puts one on the odd middle door; an array names the doors (0 = leftmost)
+    const mirrored = Array.isArray(mirror) ? mirror : mirror && mid >= 0 ? [mid] : [];
+    mirrored.forEach(i => {
+      const cx = -Wd / 2 + dw * (i + 0.5);
+      const mw = dw * 0.56, r = mw / 2, y0 = base + 0.2, y1 = base + bodyH - 0.12, sh = new THREE.Shape();
+      sh.moveTo(-r, 0); sh.lineTo(r, 0); sh.lineTo(r, y1 - y0 - r);
+      sh.absarc(0, y1 - y0 - r, r, 0, Math.PI, false); sh.lineTo(-r, 0);
+      const glass = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: 0.004, bevelEnabled: false, curveSegments: 24 }), mirrorMat);
+      glass.position.set(cx, y0, Dp / 2); g.add(glass);
+    });
     return g;
   }
   function benchPuf(f) {
@@ -1326,6 +1326,7 @@ window.addEventListener('error', e => {
     sifonyer: { name: 'Geniş şifonyer', dims: '98,4 × 46 × 87,5 cm', w: 0.984, d: 0.46, make: () => cabinet(0.984, 0.875, 0.46, 2) },
     dolap4: { name: '4 kapaklı dolap', dims: '187,2 × 63,4 × 228,3 cm', w: 1.872, d: 0.634, make: () => wardrobe(1.872, 2.283, 0.634, 4) },
     dolap5: { name: '5 kapaklı dolap (aynalı)', dims: '232,5 × 63,4 × 228,3 cm', w: 2.325, d: 0.634, make: () => wardrobe(2.325, 2.283, 0.634, 5, true) },
+    dolap6: { name: '6 kapaklı dolap (2 aynalı)', dims: '277,9 × 63,4 × 228,3 cm', w: 2.779, d: 0.634, make: () => wardrobe(2.779, 2.283, 0.634, 6, [2, 3]) },
     dresuar: { name: 'Dresuar / makyaj masası', dims: '100 × 46 × 81 cm', w: 1.0, d: 0.46, make: dresuar },
     lamba: { name: 'Lambader (abajurlu)', dims: 'Ø 42 × 153 cm, taban Ø 29', w: 0.29, d: 0.29, make: floorLamp },
     ayna: { name: 'Ayna (duvara)', dims: '54 × 2,2 × 70 cm', w: 0.54, d: 0.022, wall: true, make: ayna },
@@ -1363,7 +1364,7 @@ window.addEventListener('error', e => {
     shelf: { name: 'Kitaplık / raf', def: [120, 38, 170] },
     box: { name: 'Diğer', def: [100, 50, 50] }
   };
-  Object.entries({ karyola: 'bed', komodin: 'cabinet', sifonyer: 'cabinet', dolap4: 'cabinet', dolap5: 'cabinet', dresuar: 'table', ayna: 'box', lamba: 'box', tvduvar: 'cabinet', besta240: 'cabinet', benchpuf: 'pouf', sofa2: 'sofa', sofa3: 'sofa', berjer: 'armchair',
+  Object.entries({ karyola: 'bed', komodin: 'cabinet', sifonyer: 'cabinet', dolap4: 'cabinet', dolap5: 'cabinet', dolap6: 'cabinet', dresuar: 'table', ayna: 'box', lamba: 'box', tvduvar: 'cabinet', besta240: 'cabinet', benchpuf: 'pouf', sofa2: 'sofa', sofa3: 'sofa', berjer: 'armchair',
     sehpa: 'coffee', zigon: 'coffee', camasir: 'box', kurutma: 'box', kule: 'box', tvset: 'cabinet', kitaplik: 'shelf', table: 'table', chair: 'chair', konsol: 'cabinet', billy: 'shelf' }).forEach(([k, s]) => { if (CATALOG[k]) CATALOG[k].shape = s; });
   function scaled(g, bw, bd, bh, w, d, h) { g.scale.set(w / bw, h / bh, d / bd); return g; }
   function makeShape(p, f) {
