@@ -1287,6 +1287,30 @@ window.addEventListener('error', e => {
     });
     return g;
   }
+  // Arçelik washing machine 60 × 58 × 85 and 10 kg dryer 60 × 61 × 85 (arcelik.com.tr): white bodies, round door with a dark ring,
+  // control strip on top; the dryer has a grille at the bottom right. Back faces sit at z = -0,305 so both line up against a wall.
+  const applWhite = M(0xf4f4f2, 0.35), applDark = M(0x1d1f22, 0.35), applGlass = M(0x2a2e33, 0.1, { metalness: 0.3 });
+  function appliance(g, y0, d, dryer) {
+    const zb = -0.305, zf = zb + d;
+    g.add(box(0.6, 0.85, d, applWhite, 0, y0, zb + d / 2));
+    g.add(box(0.56, 0.1, 0.006, applWhite, 0, y0 + 0.72, zf + 0.003));              // control strip
+    g.add(box(0.14, 0.06, 0.006, applDark, 0.17, y0 + 0.74, zf + 0.004));             // display
+    g.add(cyl(0.025, 0.025, 0.02, applDark, -0.02, y0 + 0.74, zf));                   // knob (lies flat, reads as a dot)
+    const ring = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.03, 40), applDark);
+    ring.rotation.x = Math.PI / 2; ring.position.set(0, y0 + 0.42, zf + 0.015); g.add(shade(ring));
+    const glass = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.035, 40), applGlass);
+    glass.rotation.x = Math.PI / 2; glass.position.set(0, y0 + 0.42, zf + 0.018); g.add(glass);
+    if (dryer) {
+      const grille = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.008, 32), M(0xd9d9d6, 0.5));
+      grille.rotation.x = Math.PI / 2; grille.position.set(0.18, y0 + 0.1, zf + 0.004); g.add(grille);
+    }
+  }
+  function washer() { const g = new THREE.Group(); appliance(g, 0, 0.58, false); return g; }
+  function dryerUnit() { const g = new THREE.Group(); appliance(g, 0, 0.61, true); return g; }
+  function stackedLaundry() {                                                     // dryer on the washer with a 2 cm stacking kit
+    const g = new THREE.Group(); appliance(g, 0, 0.58, false);
+    g.add(box(0.6, 0.02, 0.58, applWhite, 0, 0.85, -0.305 + 0.29)); appliance(g, 0.87, 0.61, true); return g;
+  }
   function coffeeTable() {
     const g = new THREE.Group();
     g.add(box(1.2, 0.03, 0.6, mat.white, 0, 0.37, 0));
@@ -1310,6 +1334,9 @@ window.addEventListener('error', e => {
     sofa3: { name: "3'lü koltuk (yataklı)", dims: '233 × 101 × 76,5 cm', w: 2.33, d: 1.01, fabric: true, make: it => sofa(2.33, it.color) },
     berjer: { name: 'Berjer', dims: '79 × 85 × 90 cm', w: 0.79, d: 0.85, fabric: true, make: it => armchair(it.color) },
     zigon: { name: "Zigon sehpa (3'lü)", dims: '67 × 40 × 59,5 cm (41 / 54 / 67 geniş)', w: 0.67, d: 0.4, make: zigon },
+    camasir: { name: 'Çamaşır makinesi', dims: '60 × 58 × 85 cm', w: 0.6, d: 0.61, make: washer },
+    kurutma: { name: 'Kurutma makinesi 10 kg', dims: '60 × 61 × 85 cm', w: 0.6, d: 0.61, make: dryerUnit },
+    kule: { name: 'Çamaşır + kurutma makinesi (üst üste)', dims: '60 × 61 × 172 cm', w: 0.6, d: 0.61, make: stackedLaundry },
     sehpa: { name: 'Orta sehpa', dims: '120 × 60 × 40 cm', w: 1.2, d: 0.6, make: coffeeTable },
     tvset: { name: 'BESTÅ TV ünitesi kombinasyonu + Samsung 65R85H', dims: '300 × 42 × 138 cm', w: 3.0, d: 0.42, price: 30472, make: bestaTv },
     besta240: { name: 'BESTÅ TV ünitesi 240 + Samsung 65R85H', dims: '240 × 41,3 × 152,8 cm', w: 2.4, d: 0.413, make: besta240 },
@@ -1321,7 +1348,7 @@ window.addEventListener('error', e => {
     billy: { name: 'Köşe kitaplık (meşe)', dims: '96,3/96,3 × 28 × 202 cm', w: 0.963, d: 0.963, make: billyCorner,
       parts: [[-0.4815, 0.4815, -0.4815, -0.2015], [-0.4815, -0.2015, -0.2015, 0.4815], [-0.2015, 0.07, -0.2015, 0.07]] }
   };
-  Object.keys(CATALOG).forEach(k => { CATALOG[k].brand = ['tvset', 'besta240', 'tvduvar', 'lamba'].includes(k) ? 'IKEA' : k === 'billy' ? 'Diğer' : 'Kelebek Bohemia'; });
+  Object.keys(CATALOG).forEach(k => { CATALOG[k].brand = ['tvset', 'besta240', 'tvduvar', 'lamba'].includes(k) ? 'IKEA' : ['camasir', 'kurutma', 'kule'].includes(k) ? 'Arçelik' : k === 'billy' ? 'Diğer' : 'Kelebek Bohemia'; });
 
   // Brand products added by the household. Each is drawn with the shape of its type, sized to its own measurements (cm).
   const SHAPES = {
@@ -1337,7 +1364,7 @@ window.addEventListener('error', e => {
     box: { name: 'Diğer', def: [100, 50, 50] }
   };
   Object.entries({ karyola: 'bed', komodin: 'cabinet', sifonyer: 'cabinet', dolap4: 'cabinet', dolap5: 'cabinet', dresuar: 'table', ayna: 'box', lamba: 'box', tvduvar: 'cabinet', besta240: 'cabinet', benchpuf: 'pouf', sofa2: 'sofa', sofa3: 'sofa', berjer: 'armchair',
-    sehpa: 'coffee', zigon: 'coffee', tvset: 'cabinet', kitaplik: 'shelf', table: 'table', chair: 'chair', konsol: 'cabinet', billy: 'shelf' }).forEach(([k, s]) => { if (CATALOG[k]) CATALOG[k].shape = s; });
+    sehpa: 'coffee', zigon: 'coffee', camasir: 'box', kurutma: 'box', kule: 'box', tvset: 'cabinet', kitaplik: 'shelf', table: 'table', chair: 'chair', konsol: 'cabinet', billy: 'shelf' }).forEach(([k, s]) => { if (CATALOG[k]) CATALOG[k].shape = s; });
   function scaled(g, bw, bd, bh, w, d, h) { g.scale.set(w / bw, h / bh, d / bd); return g; }
   function makeShape(p, f) {
     const w = p.w / 100, d = p.d / 100, h = p.h / 100;
@@ -1422,7 +1449,8 @@ window.addEventListener('error', e => {
         ['chair', 395, 170, 450, 218.5, 1], ['chair', 395, 240, 450, 288.5, 1],
         ['chair', 540, 170, 595, 218.5, 3], ['chair', 540, 240, 595, 288.5, 3],
         ['karyola', 955, 193, 1130, 419, 2], ['komodin', 899, 373, 955, 419, 2], ['komodin', 1130, 373, 1186, 419, 2],
-        ['dolap4', 1000, -265, 1187.2, -201.6, 0], ['sifonyer', 823, 100, 869, 198.4, 1]
+        ['dolap4', 1000, -265, 1187.2, -201.6, 0], ['sifonyer', 823, 100, 869, 198.4, 1],
+        ['kule', 751.5, 185, 812.5, 245, 3]
       ]
     },
     abef: {
@@ -1496,10 +1524,18 @@ window.addEventListener('error', e => {
       if (!serverOk || houseKey !== k || drag) return;
       const parsed = data && parseLayout(data);
       if (!parsed) { saveState(); return; } // nothing on file yet: store the current layout
+      // The washer-dryer stack joined VIP Kurtköy later: add it once to the layout on file too.
+      let grew = false;
+      try {
+        if (k === 'ac' && !parsed.some(i => i.type === 'kule') && !localStorage.getItem('vip-kule-added-file')) {
+          parsed.push({ id: nextId++, type: 'kule', x: 7.82, z: 2.15, r: 3 }); localStorage.setItem('vip-kule-added-file', '1'); grew = true;
+        }
+      } catch (e) { /* storage unavailable */ }
       select(null); items.forEach(removeItemObject); items = parsed; items.forEach(addItemObject);
       history.length = 0; lastSnap = snap(); undoBtn.disabled = true;
       refreshFootprints(); setChip(); renderLegend();
       try { localStorage.setItem(STORE_KEY, layoutJson()); } catch (e) { /* ignore */ }
+      if (grew) pushServer();
     }).catch(() => { /* opened without the server: browser storage only */ });
   }
   function saveState() {
@@ -2185,6 +2221,14 @@ window.addEventListener('error', e => {
     sun.shadow.camera.updateProjectionMatrix();
     house = h; houseKey = hKey; STORE_KEY = h.store;
     items = loadState();
+    // The washer-dryer stack joined VIP Kurtköy later: add it once to a layout saved before, beside the bathroom vanity.
+    try {
+      if (hKey === 'ac' && !items.some(i => i.type === 'kule') && !localStorage.getItem('vip-kule-added')) {
+        items.push({ id: nextId++, type: 'kule', x: 7.82, z: 2.15, r: 3 });
+        localStorage.setItem('vip-kule-added', '1');
+        localStorage.setItem(STORE_KEY, JSON.stringify(items.map(({ type, x, z, r, color }) => ({ type, x, z, r, color }))));
+      }
+    } catch (e) { /* storage unavailable */ }
     items.forEach(addItemObject);
     history.length = 0; lastSnap = snap(); undoBtn.disabled = true;
     clearTimeout(putTimer);
