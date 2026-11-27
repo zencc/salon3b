@@ -1347,11 +1347,21 @@ window.addEventListener('error', e => {
     for (const sx of [-1, 1]) g.add(box(0.008, cy - legH - 0.03, 0.004, mat.groove, sx * r, legH + 0.03, zf));
     return g;
   }
+  // Bohemia orta sehpa (kelebek.com, SKU 3200424246): 120 × 60 × 40 cm, 18 mm white racetrack top on two oak slab legs
+  // whose outer top corner is rounded, tied by an oak rail at the back.
   function coffeeTable() {
-    const g = new THREE.Group();
-    g.add(box(1.2, 0.03, 0.6, mat.white, 0, 0.37, 0));
-    g.add(box(1.05, 0.02, 0.45, mat.oak, 0, 0.12, 0));
-    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => g.add(cyl(0.024, 0.016, 0.37, mat.oak, sx * 0.52, 0, sz * 0.23)));
+    const g = new THREE.Group(), H = 0.382, D = 0.44, a = 0.3, b = 0.5, R = 0.16;
+    const topGeo = new THREE.ExtrudeGeometry(stadium(0.6, 1.2), { depth: 0.018, bevelEnabled: false, curveSegments: 32 });
+    topGeo.rotateZ(Math.PI / 2).rotateX(-Math.PI / 2);
+    const top = new THREE.Mesh(topGeo, mat.white); top.position.y = H; g.add(shade(top));
+    for (const sx of [-1, 1]) {
+      const sh = new THREE.Shape();
+      sh.moveTo(a, 0); sh.lineTo(b, 0); sh.lineTo(b, H - R); sh.absarc(b - R, H - R, R, 0, Math.PI / 2, false); sh.lineTo(a, H); sh.closePath();
+      const geo = new THREE.ExtrudeGeometry(sh, { depth: D, bevelEnabled: false, curveSegments: 20 });
+      geo.translate(0, 0, -D / 2);
+      const leg = new THREE.Mesh(geo, mat.oak); leg.scale.x = sx; g.add(shade(leg));
+    }
+    g.add(box(2 * a, 0.09, 0.018, mat.oak, 0, H - 0.09, -D / 2 + 0.04));
     return g;
   }
 
@@ -1388,7 +1398,7 @@ window.addEventListener('error', e => {
       parts: [[-0.4815, 0.4815, -0.4815, -0.2015], [-0.4815, -0.2015, -0.2015, 0.4815], [-0.2015, 0.07, -0.2015, 0.07]] }
   };
   // Kelebek list prices (Satış Fiyatı, before basket discounts) and product pages, read on kelebek.com on 28.11.2026.
-  // Karyola = başlıksız karyola 13.489,08 + başlık 19.588,67. Berjer = Bohemia ahşap kollu berjer. Orta sehpa, zigon sehpa and kitaplık had no price on the site.
+  // Karyola = başlıksız karyola 13.489,08 + başlık 19.588,67. Berjer = Bohemia ahşap kollu berjer. Zigon sehpa and kitaplık had no price on the site.
   const KB = 'https://www.kelebek.com/';
   const PRICES = {
     karyola: [33077.75, KB + 'bohemia-basliksiz-karyola-160-cm-sonil-dokulu-ekru-3200424244'],
@@ -1401,7 +1411,8 @@ window.addEventListener('error', e => {
     sofa2: [42724.63, KB + 'bohemia-ikili-yatakli-koltuk-sonil-dokulu-ekru-3120024848'], sofa3: [47569.05, KB + 'bohemia-uclu-yatakli-koltuk-sonil-dokulu-ekru-3120024845'],
     berjer: [18110.05, KB + 'bohemia-ahsap-kollu-berjer-sonil-dokulu-ekru-turuncu-3120024846'],
     konsol: [22187.99, KB + 'bohemia-konsol-3200424237'], table: [20688.13, KB + 'bohemia-acilir-masa-3200424239'],
-    chair: [8589.22, KB + 'bohemia-sandalye-sonil-dokulu-ekru-3120025282']
+    chair: [8589.22, KB + 'bohemia-sandalye-sonil-dokulu-ekru-3120025282'],
+    sehpa: [3088.58, KB + 'bohemia-orta-sehpa-3200424246']
   };
   Object.entries(PRICES).forEach(([k, [p, url]]) => { if (CATALOG[k]) { if (CATALOG[k].price == null) CATALOG[k].price = p; if (!CATALOG[k].url) CATALOG[k].url = url; } });
   Object.keys(CATALOG).forEach(k => { CATALOG[k].brand = ['tvset', 'besta240', 'tvduvar', 'lamba'].includes(k) ? 'IKEA' : ['camasir', 'kurutma', 'kule'].includes(k) ? 'Arçelik' : k === 'billy' ? 'Diğer' : 'Kelebek Bohemia'; });
