@@ -751,7 +751,7 @@ window.addEventListener('error', e => {
     wall(bx1, bx1 + T, e0, D, null, [[D - 1.17, D - 0.42, 'door']]);               // baths | ebeveyn (eb. banyo door, right beside the corner pier)
 
     door(ctx, 'giriş kapısının', door0, -aDeep, [1, 0], [0, 1], 0.9, false, entryDoor);
-    door(ctx, 'balkon kapısının', kx0, -0.5, [0, -1], [1, 0], 0.8);
+    door(ctx, 'balkon kapısının', kx0 - T, -0.5, [0, -1], [-1, 0], 0.8);            // opens out onto the balcony
     glassPanel(0.04, 0.3, kx0 - 0.05, -1.45);                                     // fixed glass beside the balcony door
     door(ctx, 'salon kapısının', W - 0.1, 0.3, [-1, 0], [0, 1], 0.9);              // set in the corner block, so it opens 30 cm into the room
     door(ctx, 'mutfak kapısının', kx1, -0.2, [0, -1], [-1, 0], 0.8);
