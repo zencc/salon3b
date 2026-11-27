@@ -1100,26 +1100,6 @@ window.addEventListener('error', e => {
     [[-0.45, 0.04], [0.45, 0.36], [0, 0.69], [-0.45, 1.02], [0.45, 1.02]].forEach(([x, y]) => g.add(box(0.025, 0.305, Dp - 0.06, mat.oak, x, y + 0.025, 0)));
     return g;
   }
-  // Oak corner bookcase 96,3/96,3 × 28 × 202: one narrow unit on each wall and a diagonal unit in the corner.
-  // Local: one arm along the back (-z), one along the left (-x).
-  const cornerOak = M(0x9a7856, 0.75), cornerOakDark = M(0x7d5f42, 0.8);
-  function shelfUnit(w, d, h) {
-    const g = new THREE.Group(), t = 0.018;
-    g.add(box(t, h, d, cornerOak, -w / 2 + t / 2, 0, 0));
-    g.add(box(t, h, d, cornerOak, w / 2 - t / 2, 0, 0));
-    g.add(box(w, h, 0.006, cornerOakDark, 0, 0, -d / 2 + 0.003));
-    g.add(box(w, 0.06, d, cornerOak, 0, 0, 0));
-    g.add(box(w, t, d, cornerOak, 0, h - t, 0));
-    [0.36, 0.68, 1.0, 1.32, 1.64].forEach(y => g.add(box(w - 2 * t, t, d - 0.02, cornerOak, 0, y, 0.01)));
-    return g;
-  }
-  function billyCorner() {
-    const g = new THREE.Group(), S = 0.963, Dp = 0.28, h = 2.02, a = -S / 2, uw = 0.413;
-    const back = shelfUnit(uw, Dp, h); back.position.set(S / 2 - uw / 2, 0, a + Dp / 2); g.add(back);
-    const side = shelfUnit(uw, Dp, h); side.position.set(a + Dp / 2, 0, S / 2 - uw / 2); side.rotation.y = Math.PI / 2; g.add(side);
-    const diag = shelfUnit(0.39, 0.4, h); diag.position.set(a + 0.274, 0, a + 0.274); diag.rotation.y = Math.PI / 4; g.add(diag);
-    return g;
-  }
   // 240 × 42 × 50 TV unit on wooden legs: a 180 bench (oak top, open cable niche, three white doors) and a 60 cm box with a white door,
   // all four modules the same height. A 65" TV hangs on the wall above the bench, 47,5 cm left of three 35 cm cubes:
   // a white one standing on the box flush with its right side, an oak one up and to the left, a white one on top at the right (top at 155 cm).
@@ -1393,12 +1373,10 @@ window.addEventListener('error', e => {
     kitaplik: { name: 'Kitaplık', dims: '120 × 38,6 × 171,3 cm', w: 1.2, d: 0.386, make: bookcase },
     table: { name: 'Açılır masa', dims: '160–200 × 90 × 76 cm', w: 1.6, d: 0.9, make: diningTable },
     chair: { name: 'Sandalye', dims: '48,5 × 63 × 84,5 cm', w: 0.485, d: 0.55, fabric: true, make: it => chair(it.color) },
-    konsol: { name: 'Konsol', dims: '189 × 46 × 79,7 cm', w: 1.89, d: 0.46, make: () => cabinet(1.89, 0.797, 0.46, 4) },
-    billy: { name: 'Köşe kitaplık (meşe)', dims: '96,3/96,3 × 28 × 202 cm', w: 0.963, d: 0.963, make: billyCorner,
-      parts: [[-0.4815, 0.4815, -0.4815, -0.2015], [-0.4815, -0.2015, -0.2015, 0.4815], [-0.2015, 0.07, -0.2015, 0.07]] }
+    konsol: { name: 'Konsol', dims: '189 × 46 × 79,7 cm', w: 1.89, d: 0.46, make: () => cabinet(1.89, 0.797, 0.46, 4) }
   };
   // Kelebek list prices (Satış Fiyatı, before basket discounts) and product pages, read on kelebek.com on 28.11.2026.
-  // Karyola = başlıksız karyola 13.489,08 + başlık 19.588,67. Berjer = Bohemia ahşap kollu berjer. Zigon sehpa and kitaplık had no price on the site.
+  // Karyola = başlıksız karyola 13.489,08 + başlık 19.588,67. Berjer = Bohemia ahşap kollu berjer. Kitaplık had no price on the site.
   const KB = 'https://www.kelebek.com/';
   const PRICES = {
     karyola: [33077.75, KB + 'bohemia-basliksiz-karyola-160-cm-sonil-dokulu-ekru-3200424244'],
@@ -1412,10 +1390,10 @@ window.addEventListener('error', e => {
     berjer: [18110.05, KB + 'bohemia-ahsap-kollu-berjer-sonil-dokulu-ekru-turuncu-3120024846'],
     konsol: [22187.99, KB + 'bohemia-konsol-3200424237'], table: [20688.13, KB + 'bohemia-acilir-masa-3200424239'],
     chair: [8589.22, KB + 'bohemia-sandalye-sonil-dokulu-ekru-3120025282'],
-    sehpa: [3088.58, KB + 'bohemia-orta-sehpa-3200424246']
+    sehpa: [3088.58, KB + 'bohemia-orta-sehpa-3200424246'], zigon: [11384.76, KB + 'bohemia-zigon-sehpa-3200424241']
   };
   Object.entries(PRICES).forEach(([k, [p, url]]) => { if (CATALOG[k]) { if (CATALOG[k].price == null) CATALOG[k].price = p; if (!CATALOG[k].url) CATALOG[k].url = url; } });
-  Object.keys(CATALOG).forEach(k => { CATALOG[k].brand = ['tvset', 'besta240', 'tvduvar', 'lamba'].includes(k) ? 'IKEA' : ['camasir', 'kurutma', 'kule'].includes(k) ? 'Arçelik' : k === 'billy' ? 'Diğer' : 'Kelebek Bohemia'; });
+  Object.keys(CATALOG).forEach(k => { CATALOG[k].brand = ['tvset', 'besta240', 'tvduvar', 'lamba'].includes(k) ? 'IKEA' : ['camasir', 'kurutma', 'kule'].includes(k) ? 'Arçelik' : 'Kelebek Bohemia'; });
 
   // Brand products added by the household. Each is drawn with the shape of its type, sized to its own measurements (cm).
   const SHAPES = {
@@ -1431,7 +1409,7 @@ window.addEventListener('error', e => {
     box: { name: 'Diğer', def: [100, 50, 50] }
   };
   Object.entries({ karyola: 'bed', komodin: 'cabinet', sifonyer: 'cabinet', dolap4: 'cabinet', dolap5: 'cabinet', dolap6: 'cabinet', darsifonyer: 'cabinet', dresuar: 'table', ayna: 'box', lamba: 'box', tvduvar: 'cabinet', besta240: 'cabinet', benchpuf: 'pouf', makyajpuf: 'pouf', sofa2: 'sofa', sofa3: 'sofa', berjer: 'armchair',
-    sehpa: 'coffee', zigon: 'coffee', camasir: 'box', kurutma: 'box', kule: 'box', tvset: 'cabinet', kitaplik: 'shelf', table: 'table', chair: 'chair', konsol: 'cabinet', billy: 'shelf' }).forEach(([k, s]) => { if (CATALOG[k]) CATALOG[k].shape = s; });
+    sehpa: 'coffee', zigon: 'coffee', camasir: 'box', kurutma: 'box', kule: 'box', tvset: 'cabinet', kitaplik: 'shelf', table: 'table', chair: 'chair', konsol: 'cabinet' }).forEach(([k, s]) => { if (CATALOG[k]) CATALOG[k].shape = s; });
   function scaled(g, bw, bd, bh, w, d, h) { g.scale.set(w / bw, h / bh, d / bd); return g; }
   function makeShape(p, f) {
     const w = p.w / 100, d = p.d / 100, h = p.h / 100;
@@ -1496,7 +1474,6 @@ window.addEventListener('error', e => {
         ['table', 350, 95, 440, 255, 1],
         ['chair', 302, 122, 350, 170, 1], ['chair', 302, 182, 350, 230, 1],
         ['chair', 371, 50, 419, 95, 0], ['chair', 371, 255, 419, 300, 2],
-        ['billy', 0, 0, 96.3, 96.3, 0],
         ['karyola', -394, 318.5, -168, 493.5, 1], ['komodin', -394, 262.5, -348, 318.5, 1], ['komodin', -394, 493.5, -348, 549.5, 1],
         ['sifonyer', -300, 206, -201.6, 252, 0], ['dolap4', -90, 542.6, 97.2, 606, 2]
       ]
@@ -1533,7 +1510,6 @@ window.addEventListener('error', e => {
         ['table', 430, 170, 520, 330, 1],
         ['chair', 375, 190, 430, 238.5, 1], ['chair', 375, 260, 430, 308.5, 1],
         ['chair', 520, 190, 575, 238.5, 3], ['chair', 520, 260, 575, 308.5, 3],
-        ['billy', -106.3, 105, -10, 201.3, 3],
         ['karyola', -340, 534, -165, 760, 2], ['komodin', -396, 714, -340, 760, 2], ['komodin', -165, 714, -109, 760, 2],
         ['dolap4', -90, 696.6, 97.2, 760, 2], ['sifonyer', -410, 430, -364, 528.4, 1]
       ]
@@ -1571,7 +1547,7 @@ window.addEventListener('error', e => {
   const layoutJson = () => JSON.stringify(items.map(({ type, x, z, r, color }) => ({ type, x, z, r, color })));
   // On the computer, the app's server.js also keeps each house's layout in its data folder; serverOk turns true once it answers.
   const SERVER_FILE = { orijinal: '', ac: 'ac-blok', abef: 'abef' };
-  const apiFor = k => 'api/layout' + (SERVER_FILE[k] ? '/' + SERVER_FILE[k] : '/' + k);
+  const apiFor = k => 'api/layout' + (k in SERVER_FILE ? (SERVER_FILE[k] ? '/' + SERVER_FILE[k] : '') : '/' + k);
   let serverOk = false, putTimer = null;
   function pushServer() {
     if (!serverOk) return;
