@@ -1322,6 +1322,28 @@ window.addEventListener('error', e => {
     for (let k = 0; k < 3; k++) { const m = new THREE.Mesh(ringGeo, mat.fabric); m.position.y = 0.04 + k * 0.14; g.add(shade(m)); }
     return g;
   }
+  // Bohemia dar şifonyer 56 × 46 × 101: white body with an arch outline on the front, four drawers with round oak knobs,
+  // oak top, splayed oak legs (15 cm)
+  function narrowChest() {
+    const g = new THREE.Group(), W = 0.56, Dp = 0.46, legH = 0.15, topT = 0.025, bodyH = 1.01 - legH - topT, zf = Dp / 2 + 0.003;
+    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => {
+      const leg = cyl(0.02, 0.012, legH + 0.01, mat.oak, sx * (W / 2 - 0.05), 0, sz * (Dp / 2 - 0.06));
+      leg.rotation.set(-sz * 0.08, 0, sx * 0.08); g.add(leg);
+    });
+    g.add(box(W, bodyH, Dp, mat.white, 0, legH, 0));
+    g.add(box(W + 0.01, topT, Dp + 0.01, mat.oak, 0, legH + bodyH, 0));
+    const dh = bodyH / 4;
+    for (let i = 0; i < 4; i++) {
+      const y = legH + i * dh;
+      if (i) g.add(box(W - 0.02, 0.004, 0.004, mat.groove, 0, y, zf));
+      const knob = new THREE.Mesh(new THREE.SphereGeometry(0.018, 12, 12), mat.oak);
+      knob.position.set(0, y + dh / 2, zf + 0.012); g.add(shade(knob));
+    }
+    const r = W / 2 - 0.06, cy = legH + bodyH - 0.05 - r;                      // arch outline
+    const arc = new THREE.Mesh(new THREE.TorusGeometry(r, 0.004, 6, 40, Math.PI), mat.groove); arc.position.set(0, cy, zf); g.add(arc);
+    for (const sx of [-1, 1]) g.add(box(0.008, cy - legH - 0.03, 0.004, mat.groove, sx * r, legH + 0.03, zf));
+    return g;
+  }
   function coffeeTable() {
     const g = new THREE.Group();
     g.add(box(1.2, 0.03, 0.6, mat.white, 0, 0.37, 0));
@@ -1338,6 +1360,7 @@ window.addEventListener('error', e => {
     dolap4: { name: '4 kapaklı dolap', dims: '187,2 × 63,4 × 228,3 cm', w: 1.872, d: 0.634, make: () => wardrobe(1.872, 2.283, 0.634, 4) },
     dolap5: { name: '5 kapaklı dolap (aynalı)', dims: '232,5 × 63,4 × 228,3 cm', w: 2.325, d: 0.634, make: () => wardrobe(2.325, 2.283, 0.634, 5, true) },
     dolap6: { name: '6 kapaklı dolap (2 aynalı)', dims: '277,9 × 63,4 × 228,3 cm', w: 2.779, d: 0.634, make: () => wardrobe(2.779, 2.283, 0.634, 6, [2, 3]) },
+    darsifonyer: { name: 'Dar şifonyer', dims: '56 × 46 × 101 cm', w: 0.56, d: 0.46, make: narrowChest },
     dresuar: { name: 'Dresuar / makyaj masası', dims: '100 × 46 × 81 cm', w: 1.0, d: 0.46, make: dresuar },
     lamba: { name: 'Lambader (abajurlu)', dims: 'Ø 42 × 153 cm, taban Ø 29', w: 0.29, d: 0.29, make: floorLamp },
     ayna: { name: 'Ayna (duvara)', dims: '54 × 2,2 × 70 cm', w: 0.54, d: 0.022, wall: true, make: ayna },
@@ -1376,7 +1399,7 @@ window.addEventListener('error', e => {
     shelf: { name: 'Kitaplık / raf', def: [120, 38, 170] },
     box: { name: 'Diğer', def: [100, 50, 50] }
   };
-  Object.entries({ karyola: 'bed', komodin: 'cabinet', sifonyer: 'cabinet', dolap4: 'cabinet', dolap5: 'cabinet', dolap6: 'cabinet', dresuar: 'table', ayna: 'box', lamba: 'box', tvduvar: 'cabinet', besta240: 'cabinet', benchpuf: 'pouf', makyajpuf: 'pouf', sofa2: 'sofa', sofa3: 'sofa', berjer: 'armchair',
+  Object.entries({ karyola: 'bed', komodin: 'cabinet', sifonyer: 'cabinet', dolap4: 'cabinet', dolap5: 'cabinet', dolap6: 'cabinet', darsifonyer: 'cabinet', dresuar: 'table', ayna: 'box', lamba: 'box', tvduvar: 'cabinet', besta240: 'cabinet', benchpuf: 'pouf', makyajpuf: 'pouf', sofa2: 'sofa', sofa3: 'sofa', berjer: 'armchair',
     sehpa: 'coffee', zigon: 'coffee', camasir: 'box', kurutma: 'box', kule: 'box', tvset: 'cabinet', kitaplik: 'shelf', table: 'table', chair: 'chair', konsol: 'cabinet', billy: 'shelf' }).forEach(([k, s]) => { if (CATALOG[k]) CATALOG[k].shape = s; });
   function scaled(g, bw, bd, bh, w, d, h) { g.scale.set(w / bw, h / bh, d / bd); return g; }
   function makeShape(p, f) {
