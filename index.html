@@ -3,11 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Bohemia Salonu</title>
+<title>Ev Planlayıcı</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
 <style>
-/* Layout: header with view switches, a toolbar for adding/rotating/removing pieces, the 3D stage where pieces are dragged, then the list of what is in the room. */
+/* Layout: header with house and view switches, a toolbar for adding/rotating/removing pieces, the 3D stage where pieces are dragged,
+   the list of what is in the house, then the furniture catalog. */
 :root {
   --bg: #f1f1ee;
   --surface: #ffffff;
@@ -38,6 +39,7 @@ body {
 }
 .wrap { max-width: 1180px; margin: 0 auto; display: grid; gap: 14px; }
 header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 12px 24px; }
+.head-right { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
 h1 { font-family: var(--font-display); font-weight: 600; font-size: 26px; margin: 0; letter-spacing: -0.01em; text-wrap: balance; }
 .sub { color: var(--muted); font-size: 13px; margin: 2px 0 0; font-variant-numeric: tabular-nums; }
 .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; background: var(--surface); }
@@ -53,6 +55,7 @@ select, .btn {
   border-radius: 999px; padding: 7px 14px; cursor: pointer;
 }
 select { padding-right: 10px; max-width: 100%; }
+.house-sel { font-weight: 600; border-color: var(--accent); }
 .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
 .btn:disabled { opacity: 0.45; cursor: default; }
 .btn:focus-visible, select:focus-visible, .seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -80,7 +83,7 @@ select { padding-right: 10px; max-width: 100%; }
 .note { color: var(--muted); font-size: 13px; margin: 0; max-width: 75ch; }
 .err { padding: 24px; color: var(--muted); }
 .start-err { position: absolute; left: 12px; right: 12px; top: 56px; z-index: 3; margin: 0; padding: 10px 14px; background: var(--surface); color: var(--danger); border: 1px solid var(--danger); border-radius: 10px; font-size: 13px; }
-dialog.io { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--fg); padding: 18px; width: min(560px, calc(100vw - 32px)); }
+dialog.io { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--fg); padding: 18px; width: min(560px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow: auto; }
 dialog.io::backdrop { background: rgba(0, 0, 0, 0.45); }
 dialog.io h2 { font: 600 18px var(--font-display); margin: 0 0 6px; }
 dialog.io p { margin: 0 0 10px; color: var(--muted); font-size: 13px; }
@@ -91,7 +94,7 @@ dialog.io .msg.bad { color: var(--danger); }
 .fs-btn { position: absolute; left: 12px; top: 12px; z-index: 2; }
 body.full { overflow: hidden; }
 body.full .wrap { position: fixed; inset: 0; z-index: 10; max-width: none; padding: 10px max(10px, env(safe-area-inset-right, 0px)) 10px max(10px, env(safe-area-inset-left, 0px)); background: var(--bg); grid-template-rows: auto 1fr; }
-body.full header, body.full .legend, body.full .note { display: none; }
+body.full header, body.full .legend, body.full .note, body.full .cat { display: none; }
 body.full .stage { height: auto; min-height: 0; }
 .cat { display: grid; gap: 10px; margin-top: 6px; }
 .cat-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; }
@@ -113,14 +116,12 @@ body.full .stage { height: auto; min-height: 0; }
 .pc-act .btn, .pc-st { padding: 5px 11px; font-size: 12px; }
 .pc a { color: var(--accent); font-size: 13px; }
 .btn.danger { border-color: var(--danger); color: var(--danger); }
-dialog.io { max-height: calc(100dvh - 32px); overflow: auto; }
 .pf { display: grid; gap: 10px; }
 .pf label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
 .pf input, .pf select { font: 14px var(--font-body); color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; box-sizing: border-box; width: 100%; max-width: none; }
 dialog.io .pf textarea { height: 70px; font: 14px var(--font-body); }
 .pf .dims { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .pf label[hidden] { display: none; }
-body.full .cat { display: none; }
 @media (max-width: 560px) { h1 { font-size: 22px; } .hint { display: none; } .spacer { display: none; } }
 </style>
 </head>
@@ -128,14 +129,17 @@ body.full .cat { display: none; }
 <div class="wrap">
   <header>
     <div>
-      <h1>Bohemia salonu</h1>
-      <p class="sub">2+1 A&amp;C Blok · net 78,84 m² · salon 24,64 m² · eşyalar evin her odasına taşınabilir</p>
+      <h1>Ev planlayıcı</h1>
+      <p class="sub" id="house-sub"></p>
     </div>
-    <div class="seg" role="group" aria-label="Bakış">
-      <button id="view-persp" aria-pressed="true">3B</button>
-      <button id="view-top" aria-pressed="false">Üstten</button>
-      <button id="view-eye" aria-pressed="false">Koltuktan</button>
-      <button id="view-house" aria-pressed="false">Tüm ev</button>
+    <div class="head-right">
+      <select id="house-sel" class="house-sel" aria-label="Ev"></select>
+      <div class="seg" role="group" aria-label="Bakış">
+        <button id="view-persp" aria-pressed="true">3B</button>
+        <button id="view-top" aria-pressed="false">Üstten</button>
+        <button id="view-eye" aria-pressed="false">Koltuktan</button>
+        <button id="view-house" aria-pressed="false">Tüm ev</button>
+      </div>
     </div>
   </header>
 
@@ -150,6 +154,7 @@ body.full .cat { display: none; }
     <button class="btn" id="undo-btn" disabled title="Ctrl+Z">Geri al</button>
     <button class="btn" id="io-btn">Yerleşim</button>
     <button class="btn" id="reset-btn">Başa al</button>
+    <button class="btn" id="def-btn" title="Bu evin şu anki yerleşimini varsayılan yapar">Varsayılan yap</button>
   </div>
 
   <div class="stage" id="stage">
@@ -174,9 +179,10 @@ body.full .cat { display: none; }
     <p class="cat-sum" id="cat-sum"></p>
     <div class="cat-list" id="cat-list"></div>
   </section>
+
   <dialog class="io" id="io-dlg" aria-labelledby="io-title">
     <h2 id="io-title">Yerleşimi taşı</h2>
-    <p>Buradaki metin şu anki yerleşimdir. Kopyalayıp diğer sürümde aynı pencereye yapıştırın ve "Uygula"ya basın.</p>
+    <p>Buradaki metin seçili evdeki şu anki yerleşimdir. Kopyalayıp diğer sürümde aynı evi seçip aynı pencereye yapıştırın ve "Uygula"ya basın.</p>
     <textarea id="io-text" spellcheck="false" aria-label="Yerleşim metni"></textarea>
     <div class="row">
       <button class="btn" id="io-copy">Kopyala</button>
@@ -207,7 +213,7 @@ body.full .cat { display: none; }
       <div class="row"><span class="msg" id="prod-msg" role="status"></span></div>
     </form>
   </dialog>
-  <p class="note">Mobilya ölçüleri kelebek.com ürün sayfalarından. Ev, 2+1 A&amp;C Blok (Luna 2+1) satış krokisinden ölçüldü: odalar, duvar girinti ve çıkıntıları, kapı ve pencereler krokiye göre, birkaç santimetre payla; oda alanları plandaki net değerler; tavan yüksekliği 2,6 m varsayıldı. Mutfak tezgâhı ve banyo eşyaları sabittir. Çakışan ya da kapının açılma alanına giren eşyanın tabanı kırmızı görünür. Yerleşiminiz bilgisayardaki uygulamada data/layout-ac-blok.json dosyasına, internetten açıldığında bu tarayıcıya kaydedilir; cihazlar arasında taşımak için "Yerleşim" düğmesini kullanın.</p>
+  <p class="note" id="house-note"></p>
 </div>
 
 <script>
@@ -223,6 +229,7 @@ window.addEventListener('error', e => {
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js"></script>
 <script>
 (function () {
   const stage = document.getElementById('stage');
@@ -230,10 +237,7 @@ window.addEventListener('error', e => {
     stage.innerHTML = '<p class="err">3B görünüm yüklenemedi. Sayfayı yenileyin.</p>';
     return;
   }
-  // 2+1 A&C Blok (Luna 2+1), measured from the sales plan at about 33,9 px per metre and checked against the room areas.
-  // Salon interior is x 0–W, z 0–D; kitchen and balkon lie above it (z < 0), the stair core above the antre and hol,
-  // baths and ebeveyn to the right, yatak odası top right. The outline steps in and out where the plan does.
-  const W = 6.4, D = 3.85, H = 2.6, T = 0.1;
+  const H = 2.6, T = 0.1;
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
@@ -248,7 +252,7 @@ window.addEventListener('error', e => {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = 0.85;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   // Shadows only change when furniture moves, so the shadow map is redrawn on demand instead of every frame.
@@ -257,6 +261,18 @@ window.addEventListener('error', e => {
   stage.prepend(renderer.domElement);
 
   const scene = new THREE.Scene();
+  // Soft light reflected from a neutral room, so materials pick up realistic highlights and shading from every side.
+  const hasEnv = !!THREE.RoomEnvironment;
+  if (hasEnv) {
+    try {
+      // Dimmed to about 40 %, so the sun and ceiling lights still model the room and cast visible shadows.
+      const room = new THREE.RoomEnvironment(), k = 0.4;
+      room.traverse(o => { if (o.isLight) o.intensity *= k; else if (o.isMesh && o.material.isMeshBasicMaterial) o.material.color.multiplyScalar(k); });
+      const pm = new THREE.PMREMGenerator(renderer); scene.environment = pm.fromScene(room, 0.04).texture; pm.dispose();
+    }
+    catch (e) { /* plain lights only */ }
+  }
+  const maxAniso = renderer.capabilities.getMaxAnisotropy();
   const camera = new THREE.PerspectiveCamera(50, 1, 0.05, 100);
   const controls = new THREE.OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
@@ -277,7 +293,7 @@ window.addEventListener('error', e => {
   const M = (c, r = 0.8, extra = {}) => new THREE.MeshStandardMaterial(Object.assign({ color: c, roughness: r }, extra));
   const mat = {
     white: M(0xf2f0eb, 0.55), oak: M(0xc49a68, 0.65), fabric: M(0xe2d9c8, 0.95), fabric2: M(0xd9cfbc, 0.95),
-    groove: M(0xc9c3b8, 0.8), wall: M(0xb4b4ae, 0.95), trim: M(0xf4f3ef, 0.6), base: M(0x7a4426, 0.7),
+    groove: M(0xc9c3b8, 0.8), wall: M(0xe9e6df, 0.92), trim: M(0xf4f3ef, 0.6), base: M(0x7a4426, 0.7),
     screen: M(0x101216, 0.25, { metalness: 0.2 }), dark: M(0x222222, 0.5),
     glass: M(0xcfe3ee, 0.05, { transparent: true, opacity: 0.28 }), radiator: M(0xf5f5f2, 0.45)
   };
@@ -305,45 +321,161 @@ window.addEventListener('error', e => {
     return Object.assign({}, baseMat, { fabric: c.m[0], fabric2: c.m[1] });
   }
 
-  // Floor
-  function plankTexture(rw = W, rd = D) {
-    const c = document.createElement('canvas'); c.width = 1024; c.height = 1024;
-    const g = c.getContext('2d'); const rows = 10, rh = 1024 / rows;
-    let seed = 7; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
-    for (let r = 0; r < rows; r++) {
-      let x = -rnd() * 400;
-      while (x < 1024) {
-        const len = 300 + rnd() * 260;
-        g.fillStyle = `hsl(${20 + rnd() * 6}, ${48 + rnd() * 8}%, ${30 + rnd() * 8}%)`;
-        g.fillRect(x, r * rh, len, rh);
-        g.strokeStyle = 'rgba(40,18,8,0.55)'; g.lineWidth = 2; g.strokeRect(x, r * rh, len, rh);
-        g.strokeStyle = 'rgba(60,28,12,0.12)'; g.lineWidth = 1;
-        for (let k = 0; k < 5; k++) { const yy = r * rh + rnd() * rh; g.beginPath(); g.moveTo(x, yy); g.lineTo(x + len, yy + (rnd() - 0.5) * 6); g.stroke(); }
-        x += len;
-      }
-    }
-    const t = new THREE.CanvasTexture(c);
-    t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rw / 2, rd / 2);
-    t.encoding = THREE.sRGBEncoding; t.anisotropy = 4; return t;
-  }
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(W, D), new THREE.MeshStandardMaterial({ map: plankTexture(), roughness: 0.6 }));
-  floor.rotation.x = -Math.PI / 2; floor.position.set(W / 2, 0, D / 2); floor.receiveShadow = true;
-  scene.add(floor);
-
-  // Walls
+  // ---------- House building blocks. Everything of the current house goes into hg, so switching houses swaps one group.
+  let hg = null;
+  let walls = [];
+  function makeWall(n, c) { const g = new THREE.Group(); hg.add(g); walls.push({ g, n, c }); return g; }
   function wallBox(g, w, h, d, x, y, z, m = mat.wall) {
     const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
     mesh.position.set(x, y + h / 2, z); mesh.receiveShadow = true; g.add(mesh); return mesh;
   }
-  const walls = [];
-  function makeWall(n, c) { const g = new THREE.Group(); scene.add(g); walls.push({ g, n, c }); return g; }
-
-  // Walls of the flat, from the plan. Each is a rectangle [x0, x1, z0, z1]; outside walls carry a normal and hide when the camera is outside them.
-  // Openings along a wall: [from, to, kind], kind 'door' (header at 2,05 m), 'pass' (open arch, header at 2,2 m) or 'win' (sill 0,9 m, top 2,2 m).
+  // Light natural oak planks, about 17 cm wide and 60–120 cm long, with grain; drawn once and repeated every 2 m.
+  // Plank palettes as hue, hue range, saturation, range, lightness, range: warm oak; pale grey-beige laminate and light glossy
+  // wood-look porcelain, both as in the VIP Kurtköy photos.
+  const plankCanvases = {};
+  const PLANK = { oak: [31, 5, 34, 10, 56, 9], light: [34, 6, 13, 6, 72, 7], porcelain: [36, 5, 24, 8, 79, 6] };
+  function plankTexture(rw, rd, style = 'oak') {
+    let plankCanvas = plankCanvases[style];
+    if (!plankCanvas) {
+      const [h0, hr, s0, sr, l0, lr] = PLANK[style];
+      const S = 2048, c = plankCanvas = plankCanvases[style] = document.createElement('canvas'); c.width = c.height = S;
+      const g = c.getContext('2d'), rows = 12, rh = S / rows;
+      let seed = 7; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+      for (let r = 0; r < rows; r++) {
+        let x = -rnd() * 700;
+        while (x < S) {
+          const len = 620 + rnd() * 620, y0 = r * rh, hue = h0 + rnd() * hr, sat = s0 + rnd() * sr, lit = l0 + rnd() * lr;
+          g.fillStyle = `hsl(${hue}, ${sat}%, ${lit}%)`; g.fillRect(x, y0, len, rh);
+          // grain: long thin lines, slightly wavy, darker and lighter
+          for (let k = 0; k < 26; k++) {
+            const yy = y0 + 3 + rnd() * (rh - 6), dark = rnd() < 0.7;
+            g.strokeStyle = dark ? `rgba(110,70,35,${0.05 + rnd() * 0.12})` : `rgba(255,240,215,${0.05 + rnd() * 0.08})`;
+            g.lineWidth = 0.6 + rnd() * 1.6; g.beginPath(); g.moveTo(x, yy);
+            for (let xx = x; xx <= x + len; xx += 60) g.lineTo(xx, yy + Math.sin((xx + k * 37) / (90 + k * 7)) * (1 + rnd() * 2));
+            g.stroke();
+          }
+          if (rnd() < 0.35) { // a small knot
+            const kx = x + 40 + rnd() * (len - 80), ky = y0 + rh * (0.3 + rnd() * 0.4);
+            g.fillStyle = 'rgba(95,58,28,0.35)'; g.beginPath(); g.ellipse(kx, ky, 9 + rnd() * 8, 4 + rnd() * 3, 0, 0, Math.PI * 2); g.fill();
+          }
+          g.fillStyle = 'rgba(60,35,15,0.55)'; g.fillRect(x, y0, 2, rh);              // end joint
+          x += len;
+        }
+        g.fillStyle = 'rgba(60,35,15,0.5)'; g.fillRect(0, r * rh, S, 2);              // long joint
+      }
+    }
+    const t = new THREE.CanvasTexture(plankCanvas);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rw / 2, rd / 2);
+    t.encoding = THREE.sRGBEncoding; t.anisotropy = maxAniso; return t;
+  }
+  // Stone tiles with a little mottling and a thin grout line; one canvas per colour pair.
+  const tileCanvases = {};
+  function tileTexture(rw, rd, size, base, grout) {
+    const key = base + grout;
+    if (!tileCanvases[key]) {
+      const c = tileCanvases[key] = document.createElement('canvas'); c.width = c.height = 256;
+      const g = c.getContext('2d');
+      g.fillStyle = base; g.fillRect(0, 0, 256, 256);
+      let seed = 11; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+      for (let i = 0; i < 900; i++) { g.fillStyle = rnd() < 0.5 ? 'rgba(0,0,0,0.025)' : 'rgba(255,255,255,0.04)'; g.fillRect(rnd() * 256, rnd() * 256, 2 + rnd() * 6, 2 + rnd() * 6); }
+      g.strokeStyle = grout; g.lineWidth = 3; g.strokeRect(1.5, 1.5, 253, 253);
+    }
+    const t = new THREE.CanvasTexture(tileCanvases[key]);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rw / size, rd / size);
+    t.encoding = THREE.sRGBEncoding; t.anisotropy = maxAniso; return t;
+  }
+  // Floor rectangles of the current house, kept to shade the floor where it meets a wall.
+  let floorRects = [];
+  // Soft darkening along the floor's edges against walls (a stand-in for ambient occlusion). Edges that run straight
+  // into another floor (an open passage, or the two parts of an L-shaped room) are left light.
+  function shadeFloorEdges() {
+    floorRects.forEach(r => {
+      const touch = (o, side) => {
+        const zo = Math.min(r.z1, o.z1) - Math.max(r.z0, o.z0) > 0.05, xo = Math.min(r.x1, o.x1) - Math.max(r.x0, o.x0) > 0.05;
+        if (side === 'l') return zo && Math.abs(r.x0 - o.x1) < 0.04;
+        if (side === 'r') return zo && Math.abs(r.x1 - o.x0) < 0.04;
+        if (side === 't') return xo && Math.abs(r.z0 - o.z1) < 0.04;
+        return xo && Math.abs(r.z1 - o.z0) < 0.04;
+      };
+      const open = side => floorRects.some(o => o !== r && touch(o, side));
+      const rw = r.x1 - r.x0, rd = r.z1 - r.z0, ppm = 48;
+      const cw = Math.max(8, Math.round(rw * ppm)), ch = Math.max(8, Math.round(rd * ppm)), d = 0.5 * ppm, a = 0.3;
+      const c = document.createElement('canvas'); c.width = cw; c.height = ch;
+      const g = c.getContext('2d');
+      const band = (x0, y0, x1, y1, rx, ry, rwid, rhei) => {
+        const gr = g.createLinearGradient(x0, y0, x1, y1);
+        gr.addColorStop(0, `rgba(30,20,10,${a})`); gr.addColorStop(0.3, `rgba(30,20,10,${a * 0.35})`); gr.addColorStop(1, 'rgba(30,20,10,0)');
+        g.fillStyle = gr; g.fillRect(rx, ry, rwid, rhei);
+      };
+      if (!open('l')) band(0, 0, d, 0, 0, 0, d, ch);
+      if (!open('r')) band(cw, 0, cw - d, 0, cw - d, 0, d, ch);
+      if (!open('t')) band(0, 0, 0, d, 0, 0, cw, d);
+      if (!open('b')) band(0, ch, 0, ch - d, 0, ch - d, cw, d);
+      const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding;
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(rw, rd), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false }));
+      m.rotation.x = -Math.PI / 2; m.position.set((r.x0 + r.x1) / 2, 0.003, (r.z0 + r.z1) / 2); m.renderOrder = 1; hg.add(m);
+    });
+  }
+  // Wall tops drawn dark, like a section cut on a plan, so rooms read clearly from above.
+  const wallCap = M(0x6c6964, 0.9);
+  function capWalls() {
+    const tops = [];
+    hg.traverse(o => {
+      if (o.isMesh && o.material === mat.wall && o.geometry.type === 'BoxGeometry') {
+        const p = o.geometry.parameters;
+        if (Math.abs(o.position.y + p.height / 2 - H) < 0.005) tops.push(o);
+      }
+    });
+    tops.forEach(o => {
+      const p = o.geometry.parameters, cap = new THREE.Mesh(new THREE.BoxGeometry(p.width + 0.002, 0.006, p.depth + 0.002), wallCap);
+      cap.position.set(o.position.x, H + 0.003, o.position.z); cap.rotation.copy(o.rotation); o.parent.add(cap);
+    });
+  }
+  function roomLabel(name, dims, cx, cz, maxW) {
+    const c = document.createElement('canvas'); c.width = 512; c.height = 200;
+    const g = c.getContext('2d');
+    g.fillStyle = 'rgba(250,248,243,0.82)';
+    g.beginPath(); if (g.roundRect) g.roundRect(6, 6, 500, 188, 28); else g.rect(6, 6, 500, 188); g.fill();
+    g.fillStyle = '#2a2723'; g.textAlign = 'center';
+    g.font = '600 68px system-ui, sans-serif'; g.fillText(name, 256, 92);
+    g.fillStyle = '#5b564f'; g.font = '44px system-ui, sans-serif'; g.fillText(dims, 256, 160);
+    const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = maxAniso;
+    const w = Math.min(1.5, maxW), h = w * 200 / 512;
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false }));
+    m.rotation.x = -Math.PI / 2; m.position.set(cx, 0.012, cz); hg.add(m);
+  }
+  function roomFloor(x0, x1, z0, z1, kind) {
+    const rw = x1 - x0, rd = z1 - z0;
+    if (kind === 'void') {
+      const v = new THREE.Mesh(new THREE.PlaneGeometry(rw, rd), M(0x3a3936, 1));
+      v.rotation.x = -Math.PI / 2; v.position.set((x0 + x1) / 2, -0.002, (z0 + z1) / 2); hg.add(v); return;
+    }
+    if (kind === 'balkon') {
+      const sh = new THREE.Shape(), c = 0.5;
+      [[x0, z0], [x1, z0], [x1, z1 - c], [x1 - c, z1], [x0, z1]].forEach(([x, z], i) => i ? sh.lineTo(x, -z) : sh.moveTo(x, -z));
+      const bf = new THREE.Mesh(new THREE.ShapeGeometry(sh), new THREE.MeshStandardMaterial({ map: tileTexture(1, 1, 0.4, '#a8a39b', '#857f76'), roughness: 0.7 }));
+      bf.rotation.x = -Math.PI / 2; bf.receiveShadow = true; hg.add(bf); floorRects.push({ x0, x1, z0, z1 }); return;
+    }
+    const map = kind === 'parke' ? plankTexture(rw, rd) : kind === 'parke-acik' ? plankTexture(rw, rd, 'light')
+      : kind === 'seramik' ? plankTexture(rw, rd, 'porcelain') : tileTexture(rw, rd, 0.6, '#dcd9d3', '#b9b5ad');
+    const f = new THREE.Mesh(new THREE.PlaneGeometry(rw, rd), new THREE.MeshStandardMaterial({ map, roughness: kind === 'seramik' ? 0.16 : kind === 'tile' ? 0.45 : 0.55 }));
+    f.rotation.x = -Math.PI / 2; f.position.set((x0 + x1) / 2, 0, (z0 + z1) / 2); f.receiveShadow = true; hg.add(f);
+    floorRects.push({ x0, x1, z0, z1 });
+  }
+  // Rooms: [name, label text, floor, list of rectangles [x0, x1, z0, z1]]; the label sits in the first rectangle.
+  function addRooms(ctx, list) {
+    list.forEach(([name, dims, kind, rects]) => {
+      rects.forEach(r => { roomFloor(r[0], r[1], r[2], r[3], kind); ctx.places.push({ name, x0: r[0], x1: r[1], z0: r[2], z1: r[3] }); });
+      const [x0, x1, z0, z1] = rects[0];
+      roomLabel(name, dims, (x0 + x1) / 2, (z0 + z1) / 2, x1 - x0 - 0.15);
+    });
+  }
+  // A wall rectangle [x0, x1, z0, z1]; outside walls carry a normal and hide when the camera is outside them.
+  // Openings along it: [from, to, kind], kind 'door' (header at 2,05 m), 'pass' (open arch, header at 2,2 m) or 'win' (sill 0,9 m, top 2,2 m).
   const sill = M(0xcfcac2, 0.7);
   function wall(x0, x1, z0, z1, n, ops = [], h = H) {
     const alongX = x1 - x0 >= z1 - z0, a1 = alongX ? x1 : z1, th = alongX ? z1 - z0 : x1 - x0;
-    const g = n ? makeWall(n, [(x0 + x1) / 2, (z0 + z1) / 2]) : scene;
+    const g = n ? makeWall(n, [(x0 + x1) / 2, (z0 + z1) / 2]) : hg;
     const piece = (s0, s1, y0, y1, m = mat.wall, k = 1) => {
       if (s1 - s0 < 0.001 || y1 - y0 < 0.001) return;
       const c = (s0 + s1) / 2, t = th * k;
@@ -370,127 +502,372 @@ window.addEventListener('error', e => {
     });
     piece(s, a1, 0, h);
   }
-  // Outside walls
-  wall(-T, 0, -0.15, D + T, [-1, 0], [[0.6, 2.6, 'win']]);                       // salon window
-  wall(-T, 13.49, D, D + T, [0, 1]);                                             // long back wall
-  wall(13.39, 13.49, 0.08, D, [1, 0], [[1.0, 2.6, 'win']]);                      // ebeveyn window
-  wall(13.39, 14.32, 0.08, 0.18, [0, 1]);                                        // step: yatak odası sticks out past the ebeveyn
-  wall(14.22, 14.32, -2.78, 0.18, [1, 0], [[-2.25, -0.9, 'win']]);               // yatak odası window
-  wall(10.24, 14.32, -2.78, -2.68, [0, -1]);
-  wall(0.76, 4.95, -2.84, -2.74, [0, -1], [[2.0, 3.2, 'win']]);                  // kitchen window
-  wall(4.85, 4.95, -4.41, -2.84, [-1, 0]);                                       // stair core, standing out above the flat
-  wall(4.85, 10.34, -4.41, -4.31, [0, -1]);
-  wall(10.24, 10.34, -4.41, -2.78, [1, 0]);
-  wall(4.95, 10.24, -1.22, -1.12, [0, -1], [[6.95, 7.85, 'door']]);              // entrance from the stair landing
-  // Balcony parapet (sticks out past the salon wall)
-  wall(-1.25, 0.76, -2.84, -2.74, [0, -1], [], 1.0);
-  wall(-1.25, -1.15, -2.74, -0.15, [-1, 0], [], 1.0);
-  wall(-1.25, -T, -0.25, -0.15, [0, 1], [], 1.0);
-  // Inside walls
-  wall(0.76, 0.86, -2.74, -0.15, null, [[-1.5, -0.7, 'door']]);                  // kitchen–balkon
-  wall(-T, 6.4, -0.15, 0, null, [[5.52, 6.4, 'pass']]);                          // kitchen | salon, open to the antre at the right
-  wall(4.85, 4.95, -2.84, -0.15, null, [[-1.0, -0.2, 'door']]);                  // kitchen door to the antre
-  wall(6.4, 6.5, 0, D);                                                          // salon | baths
-  wall(6.4, 13.39, 0.08, 0.18, null, [[8.0, 8.7, 'door'], [9.25, 10.05, 'door']]); // hol | banyo, ebeveyn (banyo and ebeveyn doors)
-  wall(10.24, 10.34, -2.68, 0.08, null, [[-0.85, -0.1, 'door']]);                // hol | yatak odası
-  wall(6.5, 9.05, 2.33, 2.43);                                                   // banyo | eb. banyo
-  wall(9.05, 9.15, 0.18, D, null, [[2.95, 3.65, 'door']]);                       // baths | ebeveyn (eb. banyo door)
-
-  // Door leaves, drawn open, with their swing on the floor: hinge point, closed direction c, open direction o, leaf length.
-  const DOOR_SWINGS = [];
+  // A door leaf drawn open, with its swing on the floor: hinge point, closed direction c, open direction o, leaf length.
   const swingMat = new THREE.LineBasicMaterial({ color: 0x8a8a84, transparent: true, opacity: 0.6 });
-  function door(name, hx, hz, c, o, L) {
-    scene.add(box(o[0] ? L : 0.04, 2.03, o[1] ? L : 0.04, mat.trim, hx + o[0] * L / 2 + c[0] * 0.025, 0, hz + o[1] * L / 2 + c[1] * 0.025));
+  // closed: the leaf is drawn shut in the doorway, so it does not stand in the room. m: leaf colour (entrance doors are brown).
+  const entryDoor = M(0x6b4426, 0.55);
+  function door(ctx, name, hx, hz, c, o, L, closed, m = mat.trim) {
+    if (closed) hg.add(box(c[0] ? L - 0.02 : 0.05, 2.03, c[1] ? L - 0.02 : 0.05, m, hx + c[0] * L / 2 - o[0] * 0.05, 0, hz + c[1] * L / 2 - o[1] * 0.05));
+    else hg.add(box(o[0] ? L : 0.04, 2.03, o[1] ? L : 0.04, m, hx + o[0] * L / 2 + c[0] * 0.025, 0, hz + o[1] * L / 2 + c[1] * 0.025));
     const pts = [];
     for (let i = 0; i <= 32; i++) {
       const a = i / 32 * Math.PI / 2;
       pts.push(new THREE.Vector3(hx + L * (Math.cos(a) * c[0] + Math.sin(a) * o[0]), 0.006, hz + L * (Math.cos(a) * c[1] + Math.sin(a) * o[1])));
     }
-    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), swingMat));
-    DOOR_SWINGS.push({ x: hx, z: hz, r: L, sx: Math.sign(c[0] + o[0]), sz: Math.sign(c[1] + o[1]), name });
+    hg.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), swingMat));
+    ctx.doors.push({ x: hx, z: hz, r: L, sx: Math.sign(c[0] + o[0]), sz: Math.sign(c[1] + o[1]), name });
   }
-  door('giriş kapısının', 6.95, -1.12, [1, 0], [0, 1], 0.9);
-  door('balkon kapısının', 0.86, -0.7, [0, -1], [1, 0], 0.8);
-  door('mutfak kapısının', 4.85, -0.2, [0, -1], [-1, 0], 0.8);
-  door('yatak odası kapısının', 10.34, -0.1, [0, -1], [1, 0], 0.75);
-  door('banyo kapısının', 8.0, 0.18, [1, 0], [0, 1], 0.7);
-  door('ebeveyn kapısının', 9.25, 0.18, [1, 0], [0, 1], 0.8);
-  door('ebeveyn banyosu kapısının', 9.15, 3.65, [0, -1], [1, 0], 0.7);
-
-  // Rooms furniture can stand in; the salon first, the rest are added below.
-  const PLACES = [{ name: 'Salon', x0: 0, x1: W, z0: 0, z1: D }];
-  function tileTexture(rw, rd, size, base, grout) {
-    const c = document.createElement('canvas'); c.width = c.height = 128;
-    const g = c.getContext('2d');
-    g.fillStyle = base; g.fillRect(0, 0, 128, 128);
-    g.strokeStyle = grout; g.lineWidth = 3; g.strokeRect(1.5, 1.5, 125, 125);
-    const t = new THREE.CanvasTexture(c);
-    t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(rw / size, rd / size);
-    t.encoding = THREE.sRGBEncoding; return t;
-  }
-  function roomLabel(name, dims, cx, cz, maxW) {
-    const c = document.createElement('canvas'); c.width = 512; c.height = 200;
-    const g = c.getContext('2d');
-    g.fillStyle = 'rgba(250,248,243,0.82)';
-    g.beginPath(); if (g.roundRect) g.roundRect(6, 6, 500, 188, 28); else g.rect(6, 6, 500, 188); g.fill();
-    g.fillStyle = '#2a2723'; g.textAlign = 'center';
-    g.font = '600 68px system-ui, sans-serif'; g.fillText(name, 256, 92);
-    g.fillStyle = '#5b564f'; g.font = '44px system-ui, sans-serif'; g.fillText(dims, 256, 160);
-    const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = 4;
-    const w = Math.min(1.5, maxW), h = w * 200 / 512;
-    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false }));
-    m.rotation.x = -Math.PI / 2; m.position.set(cx, 0.012, cz); scene.add(m);
-  }
-  function roomFloor(x0, x1, z0, z1, kind) {
-    const rw = x1 - x0, rd = z1 - z0;
-    if (kind === 'void') {
-      const v = new THREE.Mesh(new THREE.PlaneGeometry(rw, rd), M(0x3a3936, 1));
-      v.rotation.x = -Math.PI / 2; v.position.set((x0 + x1) / 2, -0.002, (z0 + z1) / 2); scene.add(v); return;
-    }
-    const map = kind === 'parke' ? plankTexture(rw, rd) : tileTexture(rw, rd, 0.6, '#dcd9d3', '#b9b5ad');
-    const f = new THREE.Mesh(new THREE.PlaneGeometry(rw, rd), new THREE.MeshStandardMaterial({ map, roughness: 0.7 }));
-    f.rotation.x = -Math.PI / 2; f.position.set((x0 + x1) / 2, 0, (z0 + z1) / 2); f.receiveShadow = true; scene.add(f);
-  }
-  // Rooms: [name, plan net area, floor, [x0, x1, z0, z1]]
-  [['Mutfak', '9,59 m²', 'tile', [0.86, 4.85, -2.74, -0.15]],
-   ['Balkon', '4,69 m²', 'tile', [-1.15, 0.76, -2.74, -0.25]],
-   ['Antre', '3,42 m²', 'tile', [4.95, 7.9, -1.12, 0]],
-   ['Hol', '2,47 m²', 'tile', [7.9, 10.24, -1.12, 0.08]],
-   ['Banyo', '5,10 m²', 'tile', [6.5, 9.05, 0.18, 2.33]],
-   ['Eb. banyo', '2,82 m²', 'tile', [6.5, 9.05, 2.43, D]],
-   ['Ebeveyn', '15,87 m²', 'parke', [9.15, 13.39, 0.18, D]],
-   ['Yatak odası', '10,24 m²', 'parke', [10.34, 14.22, -2.68, 0.08]]
-  ].forEach(([name, dims, kind, r]) => {
-    roomFloor(r[0], r[1], r[2], r[3], kind);
-    PLACES.push({ name, x0: r[0], x1: r[1], z0: r[2], z1: r[3] });
-    roomLabel(name, dims, (r[0] + r[1]) / 2, (r[2] + r[3]) / 2, r[1] - r[0] - 0.15);
-  });
-  roomFloor(4.95, 10.24, -4.31, -1.22, 'void');
-  roomLabel('Merdiven', 'ortak alan', 7.6, -2.8, 1.5);
-
-  // Built-in pieces from the plan (kitchen counter, bathroom fixtures). Furniture placed over them is flagged.
-  const FIXTURES = [];
+  // Built-in pieces (kitchen counter, bathroom fixtures). Furniture placed over them is flagged.
   const white = M(0xf7f7f4, 0.35), counterTop = M(0x55524d, 0.4), steel = M(0xc9ccce, 0.35, { metalness: 0.4 });
-  function fixture(name, x0, x1, z0, z1, h, m) {
-    FIXTURES.push({ name, x0, x1, z0, z1 });
-    scene.add(box(x1 - x0, h, z1 - z0, m, (x0 + x1) / 2, 0, (z0 + z1) / 2));
+  function fixture(ctx, name, x0, x1, z0, z1, h, m) {
+    ctx.fixtures.push({ name, x0, x1, z0, z1 });
+    hg.add(box(x1 - x0, h, z1 - z0, m, (x0 + x1) / 2, 0, (z0 + z1) / 2));
   }
-  fixture('mutfak tezgâhı', 0.86, 4.2, -2.74, -2.14, 0.86, mat.white);
-  scene.add(box(3.34, 0.04, 0.62, counterTop, 2.53, 0.86, -2.43));
-  scene.add(box(0.6, 0.01, 0.45, mat.dark, 1.6, 0.9, -2.45));
-  scene.add(box(0.7, 0.01, 0.42, steel, 2.6, 0.9, -2.46));
-  [[0.86, 2.0], [3.2, 4.2]].forEach(([a, b]) => scene.add(box(b - a, 0.7, 0.35, mat.white, (a + b) / 2, 1.45, -2.565)));
-  fixture('buzdolabı', 4.2, 4.85, -2.74, -2.09, 1.85, steel);
-  fixture('duş', 6.5, 7.4, 0.18, 1.1, 0.05, white);
-  const glassA = box(0.9, 1.9, 0.02, mat.glass, 6.95, 0.05, 1.1); glassA.castShadow = false; scene.add(glassA);
-  fixture('lavabo', 8.6, 9.05, 0.9, 1.5, 0.85, white);
-  fixture('klozet', 6.5, 6.88, 1.6, 2.15, 0.4, white);
-  scene.add(box(0.18, 0.4, 0.38, white, 6.59, 0.4, 1.87));
-  fixture('duş', 6.5, 7.3, 3.05, D, 0.05, white);
-  const glassB = box(0.8, 1.9, 0.02, mat.glass, 6.9, 0.05, 3.06); glassB.castShadow = false; scene.add(glassB);
-  fixture('lavabo', 8.6, 9.05, 2.5, 2.95, 0.85, white);
-  fixture('klozet', 7.8, 8.18, 3.3, D, 0.4, white);
-  scene.add(box(0.38, 0.4, 0.18, white, 7.99, 0.4, 3.76));
+  function glassPanel(w, d, x, z) { const b = box(w, 1.9, d, mat.glass, x, 0.05, z); b.castShadow = false; hg.add(b); }
+
+  // ---------- House 1: the first, measured house (salon 4,70 × 3,59 m)
+  function buildOriginal(ctx) {
+    const scene = hg;
+    const W = 4.7, D = 3.59;
+    const DOOR = { x: 0.2, z: 0, r: 0.9 };
+    roomFloor(0, W, 0, D, 'parke');
+    ctx.places.push({ name: 'Salon', x0: 0, x1: W, z0: 0, z1: D });
+
+    const gTop = makeWall([0, -1], [W / 2, 0]);
+    wallBox(gTop, 0.2 + T, H, T, (0.2 - T) / 2, 0, -T / 2);
+    wallBox(gTop, 0.9, H - 2.05, T, 0.65, 2.05, -T / 2);
+    wallBox(gTop, W - 1.1 + T, H, T, (1.1 + W + T) / 2, 0, -T / 2);
+    wallBox(gTop, W - 1.1, 0.07, 0.015, (1.1 + W) / 2, 0, 0.0075, mat.base);
+    wallBox(gTop, 0.05, 2.1, 0.02, 0.175, 0, 0.01, mat.trim);
+    wallBox(gTop, 0.05, 2.1, 0.02, 1.125, 0, 0.01, mat.trim);
+    wallBox(gTop, 1.0, 0.05, 0.02, 0.65, 2.05, 0.01, mat.trim);
+
+    const gBot = makeWall([0, 1], [W / 2, D]);
+    wallBox(gBot, W + 2 * T, H, T, W / 2, 0, D + T / 2);
+    wallBox(gBot, W, 0.07, 0.015, W / 2, 0, D - 0.0075, mat.base);
+    wallBox(gBot, 0.24, 0.08, 0.02, W - 0.9, 0.27, D - 0.01, mat.trim); // TV socket
+
+    const gLeft = makeWall([-1, 0], [0, D / 2]);
+    wallBox(gLeft, T, H, D, -T / 2, 0, D / 2);
+    wallBox(gLeft, 0.015, 0.07, D, 0.0075, 0, D / 2, mat.base);
+
+    const gRight = makeWall([1, 0], [W, D / 2]);
+    const wz0 = 0.6, wz1 = 2.55, wy0 = 0.9, wy1 = 2.3;
+    wallBox(gRight, T, H, wz0, W + T / 2, 0, wz0 / 2);
+    wallBox(gRight, T, H, D - wz1, W + T / 2, 0, (wz1 + D) / 2);
+    wallBox(gRight, T, wy0, wz1 - wz0, W + T / 2, 0, (wz0 + wz1) / 2);
+    wallBox(gRight, T, H - wy1, wz1 - wz0, W + T / 2, wy1, (wz0 + wz1) / 2);
+    wallBox(gRight, T * 0.4, wy1 - wy0, wz1 - wz0, W + T / 2, wy0, (wz0 + wz1) / 2, mat.glass);
+    [wz0, wz0 + 0.65, wz0 + 1.3, wz1].forEach(z => wallBox(gRight, T + 0.02, wy1 - wy0, 0.06, W + T / 2, wy0, z, mat.trim));
+    wallBox(gRight, T + 0.02, 0.06, wz1 - wz0, W + T / 2, wy0, (wz0 + wz1) / 2, mat.trim);
+    wallBox(gRight, T + 0.02, 0.06, wz1 - wz0, W + T / 2, wy1 - 0.06, (wz0 + wz1) / 2, mat.trim);
+    wallBox(gRight, 0.18, 0.03, wz1 - wz0 + 0.1, W - 0.04, wy0 - 0.03, (wz0 + wz1) / 2, mat.trim);
+    for (let z = 1.05; z <= 1.95; z += 0.075) wallBox(gRight, 0.08, 0.6, 0.05, W - 0.07, 0.15, z, mat.radiator);
+    wallBox(gRight, 0.015, 0.07, wz0, W - 0.0075, 0, wz0 / 2, mat.base);
+
+    // Door, open 90° toward the left wall
+    scene.add(box(0.04, 2.03, 0.88, mat.trim, 0.22, 0, 0.46));
+    scene.add(box(0.02, 0.02, 0.12, mat.dark, 0.25, 1.0, 0.82));
+    const swing = new THREE.Mesh(new THREE.RingGeometry(DOOR.r - 0.008, DOOR.r, 48, 1, 0, Math.PI / 2),
+      new THREE.MeshBasicMaterial({ color: 0x8a8a84, transparent: true, opacity: 0.6 }));
+    swing.rotation.x = -Math.PI / 2; swing.rotation.z = -Math.PI / 2; swing.position.set(DOOR.x, 0.004, 0);
+    scene.add(swing);
+
+    // Rest of the flat. Measured: mutfak 2,00 × 3,50, ebeveyn 2,74 × 4,00, 2. oda 4,48 × 2,37, banyo 2,75 × 1,98.
+    // Not measured (taken from the sketch): hol, balkon; WC is what is left beside the banyo; its west half is the building air shaft, left out.
+    // Drawn from the sketch with the kitchen side at z > D, then mirrored: kitchen and hall lie behind the door wall (z < 0), 2. oda and balkon behind the TV wall.
+    const flipZ = r => [r[0], r[1], D - r[3], D - r[2]];
+    [['Mutfak', '2,00 × 3,50 m', 'tile', [[1.2, 4.7, D + 0.1, D + 2.1]]],
+     ['Hol', 'ölçülmedi', 'tile', [[-1.1, 1.1, D + 0.1, D + 2.1], [-1.1, -0.1, 0, D + 0.1]]],
+     ['2. oda', '4,48 × 2,37 m', 'parke', [[-1.1, 3.38, -2.47, -0.1]]],
+     ['Balkon', 'ölçülmedi', 'balkon', [[3.48, W, -2.47, -0.1]]],
+     ['Ebeveyn', '2,74 × 4,00 m', 'parke', [[-3.94, -1.2, -2.47, 1.53]]],
+     ['Banyo', '2,75 × 1,98 m', 'tile', [[-3.94, -1.2, 1.63, 3.61]]],
+     ['WC', '≈1,37 × 1,98 m', 'tile', [[-2.57, -1.2, 3.71, D + 2.1]]]
+    ].forEach(([name, dims, kind, rects0]) => {
+      const rects = rects0.map(flipZ);
+      rects.forEach(r => { roomFloor(r[0], r[1], r[2], r[3], kind); ctx.places.push({ name, x0: r[0], x1: r[1], z0: r[2], z1: r[3] }); });
+      const [x0, x1, z0, z1] = rects[0];
+      roomLabel(name, dims, (x0 + x1) / 2, (z0 + z1) / 2, x1 - x0 - 0.15);
+    });
+    const ZT = D + 2.1, ZB = -2.47;
+    [[-2.67, -1.05, ZT, ZT + T, [0, -1]], [-0.15, W + T, ZT, ZT + T, [0, -1]], [-1.05, -0.15, ZT, ZT + T, [0, -1], 2.05], [W, W + T, D + T, D + 1.1, [1, 0]], [W, W + T, D + 2.0, ZT, [1, 0]], [W, W + T, D + 1.1, D + 2.0, [1, 0], 2.1], [W, W + T, D + 1.1, D + 2.0, [1, 0], 0, 0.9], [W, W + T, -1.97, -T, [1, 0], 0, 0.9], [W, W + T, -1.97, -T, [1, 0], 2.2], [-4.04, -3.8, ZB - T, ZB, [0, 1]], [-2.6, 3.48, ZB - T, ZB, [0, 1]], [3.48, W - 0.5, ZB - T, ZB, [0, 1], 0, 0.9], [3.48, W - 0.5, ZB - T, ZB, [0, 1], 2.2], [-3.8, -2.6, ZB - T, ZB, [0, 1], 2.1], [-3.8, -2.6, ZB - T, ZB, [0, 1], 0, 0.9],
+     [-4.04, -3.94, ZB, 1.53, [-1, 0]], [-4.04, -3.94, 1.53, 3.61, [-1, 0]],
+     [-3.94, -1.1, 1.53, 1.63], [-4.04, -2.57, 3.61, 3.71, [0, -1]], [-2.57, -1.2, 3.61, 3.71], [-2.67, -2.57, 3.71, ZT, [-1, 0]], [-1.2, -1.1, ZB, 0.64], [-1.2, -1.1, 1.44, 2.34], [-1.2, -1.1, 3.04, D + 1.05], [-1.2, -1.1, D + 1.75, ZT],
+     [3.38, 3.48, ZB, -1.7], [3.38, 3.48, -0.15, -T], [3.38, 3.48, -1.7, -0.15, null, 2.1], [-1.1, -1.0, -T, 0], [-0.2, -T, -T, 0], [1.1, 1.2, D + T, D + 1.15], [1.1, 1.2, D + 1.95, ZT]
+    ].forEach(w => {
+      const [x0, x1, z0, z1] = flipZ(w), cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+      const g = w[4] ? makeWall(w[4], [cx, cz]) : scene;
+      const y0 = w[5] || 0, y1 = w[6] || H;
+      g.add(box(x1 - x0, y1 - y0, z1 - z0, mat.wall, cx, y0, cz));
+    });
+    // Doors seen in the listing photos. Kitchen door: on the hall-side short wall, near the outside wall,
+    // hinged on that side and opening into the kitchen against the outside wall. WC door straight across the hall; its swing is unknown.
+    function doorway(x, z0, z1) {
+      scene.add(box(T, H - 2.05, z1 - z0, mat.wall, x, 2.05, (z0 + z1) / 2));
+      [z0, z1].forEach(z => scene.add(box(T + 0.03, 2.1, 0.05, mat.trim, x, 0, z + (z === z0 ? 0.025 : -0.025))));
+      scene.add(box(T + 0.03, 0.05, z1 - z0, mat.trim, x, 2.05, (z0 + z1) / 2));
+    }
+    doorway(1.15, -1.95, -1.15);
+    scene.add(box(0.8, 2.03, 0.04, mat.trim, 1.6, 0, -1.91));
+    const kSwing = new THREE.Mesh(new THREE.RingGeometry(0.792, 0.8, 48, 1, -Math.PI / 2, Math.PI / 2),
+      new THREE.MeshBasicMaterial({ color: 0x8a8a84, transparent: true, opacity: 0.6 }));
+    kSwing.rotation.x = -Math.PI / 2; kSwing.position.set(1.2, 0.004, -1.95); scene.add(kSwing);
+    doorway(-1.15, -1.75, -1.05);
+    function doorwayX(z, x0, x1) {
+      scene.add(box(x1 - x0, H - 2.05, T, mat.wall, (x0 + x1) / 2, 2.05, z));
+      [x0 + 0.025, x1 - 0.025].forEach(x => scene.add(box(0.05, 2.1, T + 0.03, mat.trim, x, 0, z)));
+      scene.add(box(x1 - x0, 0.05, T + 0.03, mat.trim, (x0 + x1) / 2, 2.05, z));
+    }
+    function swingArc(r, x, z, start) {
+      const m = new THREE.Mesh(new THREE.RingGeometry(r - 0.008, r, 48, 1, start, Math.PI / 2),
+        new THREE.MeshBasicMaterial({ color: 0x8a8a84, transparent: true, opacity: 0.6 }));
+      m.rotation.x = -Math.PI / 2; m.position.set(x, 0.004, z); scene.add(m);
+    }
+    // From the corridor photo: corridor runs from an arch at the hall to the 2. oda door; banyo and ebeveyn doors on its west side.
+    scene.add(box(1.0, H - 2.2, 0.12, mat.trim, -0.6, 2.2, -0.05));
+    // Banyo door near the arch; swing not visible, drawn closed.
+    doorway(-1.15, 0.55, 1.25);
+    scene.add(box(0.04, 2.03, 0.66, mat.trim, -1.15, 0, 0.9));
+    // Ebeveyn door at the north end of its long wall, hinged at that corner, opening into the room against the banyo wall.
+    doorway(-1.15, 2.15, 2.95);
+    scene.add(box(0.8, 2.03, 0.04, mat.trim, -1.6, 0, 2.13));
+    swingArc(0.8, -1.2, 2.15, -Math.PI);
+    // 2. oda door straight ahead at the end of the corridor, hinged on the west side, opening into the room.
+    doorwayX(D + 0.05, -1.0, -0.2);
+    scene.add(box(0.04, 2.03, 0.8, mat.trim, -0.98, 0, D + 0.5));
+    swingArc(0.8, -1.0, D + 0.1, -Math.PI / 2);
+    // From the 2. oda photo: balcony door at the north end of the wall to the balkon, window beside it with a radiator below.
+    scene.add(box(T, 0.9, 0.85, mat.wall, 3.43, 0, D + 1.275));
+    scene.add(box(T * 0.4, 1.2, 0.85, mat.glass, 3.43, 0.9, D + 1.275));
+    [D + 0.85, D + 1.275, D + 1.7].forEach(z => scene.add(box(T + 0.02, 1.2, 0.05, mat.trim, 3.43, 0.9, z)));
+    [0.9, 2.05].forEach(y => scene.add(box(T + 0.02, 0.05, 0.85, mat.trim, 3.43, y, D + 1.275)));
+    [D + 0.175, D + 0.825].forEach(z => scene.add(box(T + 0.02, 2.1, 0.05, mat.trim, 3.43, 0, z)));
+    scene.add(box(T + 0.02, 0.05, 0.7, mat.trim, 3.43, 2.05, D + 0.5));
+    scene.add(box(0.66, 2.0, 0.03, mat.glass, 3.05, 0.02, D + 0.17));
+    [2.72, 3.38].forEach(x => scene.add(box(0.05, 2.03, 0.05, mat.trim, x - (x > 3 ? 0.025 : -0.025), 0, D + 0.17)));
+    swingArc(0.7, 3.38, D + 0.15, -Math.PI);
+    for (let z = D + 1.0; z <= D + 1.55; z += 0.075) scene.add(box(0.08, 0.6, 0.05, mat.radiator, 3.31, 0.15, z));
+    // Ebeveyn window (south wall, near the west corner) with a radiator below.
+    const ewz = D + 2.47 + T / 2;
+    scene.add(box(1.2, 1.2, T * 0.4, mat.glass, -3.2, 0.9, ewz));
+    [-3.8, -3.2, -2.6].forEach(x => scene.add(box(0.05, 1.2, T + 0.02, mat.trim, x, 0.9, ewz)));
+    [0.9, 2.05].forEach(y => scene.add(box(1.2, 0.05, T + 0.02, mat.trim, -3.2, y, ewz)));
+    for (let x = -3.5; x <= -2.95; x += 0.075) scene.add(box(0.05, 0.6, 0.08, mat.radiator, x, 0.15, ewz - T / 2 - 0.07));
+    // Kitchen window (end wall, near the north corner); radiator and combi boiler on the north wall beside it.
+    scene.add(box(T * 0.4, 1.2, 0.9, mat.glass, W + T / 2, 0.9, -1.55));
+    [-2.0, -1.55, -1.1].forEach(z => scene.add(box(T + 0.02, 1.2, 0.05, mat.trim, W + T / 2, 0.9, z)));
+    [0.9, 2.05].forEach(y => scene.add(box(T + 0.02, 0.05, 0.9, mat.trim, W + T / 2, y, -1.55)));
+    for (let x = 4.25; x <= 4.6; x += 0.075) scene.add(box(0.05, 0.6, 0.08, mat.radiator, x, 0.15, -2.03));
+    scene.add(box(0.4, 0.7, 0.28, mat.radiator, 4.3, 1.3, -1.95));
+    // Balkon (from its photos): enclosed, parapet with windows above on both outside walls.
+    scene.add(box(T * 0.4, 1.3, 1.87, mat.glass, W + T / 2, 0.9, D + 1.035));
+    [D + 0.125, D + 0.75, D + 1.35, D + 1.945].forEach(z => scene.add(box(T + 0.02, 1.3, 0.05, mat.trim, W + T / 2, 0.9, z)));
+    [0.9, 2.15].forEach(y => scene.add(box(T + 0.02, 0.05, 1.87, mat.trim, W + T / 2, y, D + 1.035)));
+    const bz = D + 2.47 + T / 2;
+    scene.add(box(0.72, 1.3, T * 0.4, mat.glass, 3.84, 0.9, bz));
+    [3.505, 4.175].forEach(x => scene.add(box(0.05, 1.3, T + 0.02, mat.trim, x, 0.9, bz)));
+    [0.9, 2.15].forEach(y => scene.add(box(0.72, 0.05, T + 0.02, mat.trim, 3.84, y, bz)));
+    // The angled corner piece
+    {
+      const c = 0.5, L = c * Math.SQRT2 + 0.08, o = T / 2 / Math.SQRT2;
+      const cx = W - c / 2 + o, cz = D + 2.47 - c / 2 + o;
+      const g = makeWall([Math.SQRT1_2, Math.SQRT1_2], [cx, cz]);
+      const piece = (w, h, d, m, y) => { const b = box(w, h, d, m, cx, y, cz); b.rotation.y = Math.PI / 4; return b; };
+      g.add(piece(L, 0.9, T, mat.wall, 0), piece(L, H - 2.2, T, mat.wall, 2.2));
+      scene.add(piece(L - 0.08, 1.3, T * 0.4, mat.glass, 0.9), piece(L - 0.08, 0.05, T + 0.02, mat.trim, 0.9), piece(L - 0.08, 0.05, T + 0.02, mat.trim, 2.15));
+    }
+    // Entrance door (from the hall photo): in the hall's corner by the WC wall, hinged on that side, opening into the hall.
+    scene.add(box(0.9, 2.03, 0.05, entryDoor, -0.6, 0, -2.125));
+    const eSwing = new THREE.Mesh(new THREE.RingGeometry(0.892, 0.9, 48, 1, -Math.PI / 2, Math.PI / 2),
+      new THREE.MeshBasicMaterial({ color: 0x8a8a84, transparent: true, opacity: 0.6 }));
+    eSwing.rotation.x = -Math.PI / 2; eSwing.position.set(-1.05, 0.004, -2.1); scene.add(eSwing);
+    scene.add(box(0.04, 2.03, 0.66, mat.trim, -1.15, 0, -1.4));
+
+    ctx.doors.push(
+      { x: DOOR.x, z: DOOR.z, r: DOOR.r, sx: 1, sz: 1, name: 'salon kapısının' },
+      { x: 1.2, z: -1.95, r: 0.8, sx: 1, sz: 1, name: 'mutfak kapısının' },
+      { x: -1.2, z: 2.15, r: 0.8, sx: -1, sz: 1, name: 'ebeveyn kapısının' },
+      { x: -1.0, z: D + 0.1, r: 0.8, sx: 1, sz: 1, name: '2. oda kapısının' },
+      { x: 3.38, z: D + 0.15, r: 0.7, sx: -1, sz: 1, name: 'balkon kapısının' },
+      { x: -1.05, z: -2.1, r: 0.9, sx: 1, sz: 1, name: 'giriş kapısının' });
+  }
+
+  // ---------- House 2: 2+1 A&C Blok (Luna 2+1), measured from the sales plan at about 33,9 px per metre and checked against the room areas.
+  // Salon x 0–6,4, z 0–3,85; kitchen and balkon above it (z < 0), the stair core above the antre and hol,
+  // baths and ebeveyn to the right, yatak odası top right. The outline steps in and out where the plan does.
+  function buildAC(ctx) {
+    // Net areas from the plan (m²). Columns and piers seen in the photos are not floor, so their rooms are drawn larger by that much.
+    const A = { salon: 24.64, ebeveyn: 15.87, yatak: 10.24, antre: 3.42, hol: 2.47, mutfak: 9.59, banyo: 5.10, ebBanyo: 2.82, balkon: 4.69 };
+    // Salon: column at the window end of the dark wall, a 1,10 × 0,30 block in the corner by the door, a thin pier at the dark wall's far end.
+    // Ebeveyn: a 0,40 × 0,37 pier where the dark wall meets the door wall, a smaller column at the window end. Yatak odası: pier beside the door.
+    const colSalon = 0.3 * 0.3 + 1.1 * 0.3 + 0.12 * 0.3, colEb = 0.4 * 0.37 + 0.3 * 0.25, pierY = 0.3 * 1.73;
+    // Proportions read from the full plan image: salon about 1,43 : 1, yatak odası about 1,42 : 1 and sticking out 0,8 m past the ebeveyn,
+    // kitchen and balkon sharing one back line, balkon starting about 0,56 m left of the kitchen.
+    const salonAspect = 1.433, yAspect = 1.42, yOut = 0.8;
+    const D = Math.sqrt((A.salon + colSalon) / salonAspect), W = (A.salon + colSalon) / D;
+    // Bottom row: salon | baths (banyo over eb. banyo, together the full depth) | ebeveyn, all to the same back wall
+    const e0 = 0.18, bx0 = W + T, bw = (A.banyo + A.ebBanyo) / (D - e0 - T), bx1 = bx0 + bw;
+    const bz1 = e0 + A.banyo / bw, ebz0 = bz1 + T;
+    const ex0 = bx1 + T, ex1 = ex0 + (A.ebeveyn + colEb) / (D - e0);
+    // Top row: balkon | mutfak | antre + hol under the stair core | yatak odası
+    const top = -2.66, kx0 = 0.56, kz1 = -0.15, balZ1 = -0.25;
+    const kx1 = kx0 + A.mutfak / (kz1 - top), balW = A.balkon / (balZ1 - top), balX0 = kx0 - T - balW;
+    const yz1 = 0.08, yw = Math.sqrt((A.yatak + pierY) * yAspect), yz0 = yz1 - (A.yatak + pierY) / yw;
+    const yx1 = ex1 + yOut, yx0 = yx1 - yw, hx1 = yx0 - T;
+    const ax0 = kx1 + T, aSplit = W + 0.05, aShallow = 1.0, aDeep = 1.45;   // antre: shallow by the kitchen door, deep where the entrance door opens
+    const ax1 = aSplit + (A.antre - (aSplit - ax0) * aShallow) / aDeep;
+    const holZ0 = yz1 - A.hol / (hx1 - ax1);
+    const door0 = aSplit + 0.25;                                     // entrance door, 0,9 m, in the deep part of the antre
+
+    roomFloor(0, W, 0, D, 'parke-acik');                                           // pale grey-beige laminate (photos)
+    ctx.places.push({ name: 'Salon', x0: 0, x1: W, z0: 0, z1: D });
+    // Outside walls
+    wall(-T, 0, kz1, D + T, [-1, 0], [[D / 2 - 1.1, D / 2 + 1.1, 'win']]);           // salon window, 4 panes
+    wall(-T, ex1 + T, D, D + T, [0, 1]);                                           // long back wall
+    wall(ex1, ex1 + T, yz1, D, [1, 0], [[(e0 + D) / 2 - 0.9, (e0 + D) / 2 + 0.9, 'win']]); // ebeveyn window, 3 panes
+    wall(ex1, yx1 + T, yz1, e0, [0, 1]);                                           // step: yatak odası sticks out past the ebeveyn
+    wall(yx1, yx1 + T, yz0 - T, e0, [1, 0], [[(yz0 + yz1) / 2 - 0.6, (yz0 + yz1) / 2 + 0.6, 'win']]); // yatak odası window, 2 panes
+    wall(hx1, yx1 + T, yz0 - T, yz0, [0, -1]);
+    wall(kx0 - T, kx1 + T, top - T, top, [0, -1]);                                 // kitchen counter wall, no window
+    // Antre and hol below the stair core; the antre steps out where the entrance door is
+    wall(ax0, aSplit, -aShallow - T, -aShallow, [0, -1]);
+    wall(aSplit - T, aSplit, -aDeep - T, -aShallow - T, [-1, 0]);
+    wall(aSplit - T, ax1 + T, -aDeep - T, -aDeep, [0, -1], [[door0, door0 + 0.9, 'door']]); // entrance from the stair landing
+    wall(ax1, ax1 + T, Math.min(-aDeep, holZ0) - T, Math.max(-aDeep, holZ0), [1, 0]);
+    wall(ax1, hx1 + T, holZ0 - T, holZ0, [0, -1]);
+    // Balcony parapet (sticks out past the salon wall)
+    wall(balX0 - T, kx0 - T, top - T, top, [0, -1], [], 1.0);
+    wall(balX0 - T, balX0, top, kz1, [-1, 0], [], 1.0);
+    wall(balX0 - T, -T, balZ1, kz1, [0, 1], [], 1.0);
+    // Inside walls
+    wall(kx0 - T, kx0, top, kz1, null, [[-1.6, -0.5, 'door']]);                   // kitchen–balkon: glazed door with a fixed side panel
+    wall(-T, W, kz1, 0, null, [[W - 1.0, W - 0.1, 'door']]);                       // kitchen | salon; glazed salon door to the antre
+    wall(kx1, kx1 + T, top - T, kz1, null, [[-1.0, -0.2, 'door']]);                // kitchen door to the antre
+    wall(W, W + T, 0, D);                                                          // salon | baths
+    wall(W, ex1, yz1, e0, null, [[bx1 - 0.75, bx1 - 0.05, 'door'], [ex0 + 0.02, ex0 + 0.75, 'door']]); // hol | banyo, ebeveyn
+    wall(hx1, hx1 + T, yz0, yz1, null, [[-0.85, -0.1, 'door']]);                   // hol | yatak odası
+    wall(bx0, bx1, bz1, ebz0);                                                     // banyo | eb. banyo
+    wall(bx1, bx1 + T, e0, D, null, [[D - 1.17, D - 0.42, 'door']]);               // baths | ebeveyn (eb. banyo door, right beside the corner pier)
+
+    door(ctx, 'giriş kapısının', door0, -aDeep, [1, 0], [0, 1], 0.9, false, entryDoor);
+    door(ctx, 'balkon kapısının', kx0, -0.5, [0, -1], [1, 0], 0.8);
+    glassPanel(0.04, 0.3, kx0 - 0.05, -1.45);                                     // fixed glass beside the balcony door
+    door(ctx, 'salon kapısının', W - 0.1, 0.3, [-1, 0], [0, 1], 0.9);              // set in the corner block, so it opens 30 cm into the room
+    door(ctx, 'mutfak kapısının', kx1, -0.2, [0, -1], [-1, 0], 0.8);
+    door(ctx, 'yatak odası kapısının', yx0, -0.1, [0, -1], [1, 0], 0.75);
+    door(ctx, 'banyo kapısının', bx1 - 0.75, e0, [1, 0], [0, 1], 0.7);
+    door(ctx, 'ebeveyn kapısının', ex0 + 0.02, e0, [1, 0], [0, 1], 0.73);
+    door(ctx, 'ebeveyn banyosu kapısının', bx1 + T, D - 0.42, [0, -1], [1, 0], 0.75);
+
+    const m2 = v => v.toFixed(2).replace('.', ',') + ' m²';
+    addRooms(ctx, [
+      ['Mutfak', m2(A.mutfak), 'seramik', [[kx0, kx1, top, kz1]]],
+      ['Balkon', m2(A.balkon), 'tile', [[balX0, kx0 - T, top, balZ1]]],
+      ['Antre', m2(A.antre), 'seramik', [[aSplit, ax1, -aDeep, 0], [ax0, aSplit, -aShallow, 0]]],
+      ['Hol', m2(A.hol), 'seramik', [[ax1, hx1, holZ0, yz1]]],
+      ['Banyo', m2(A.banyo), 'tile', [[bx0, bx1, e0, bz1]]],
+      ['Eb. banyo', m2(A.ebBanyo), 'tile', [[bx0, bx1, ebz0, D]]],
+      ['Ebeveyn', m2(A.ebeveyn), 'parke-acik', [[ex0, ex1, e0, D]]],
+      ['Yatak odası', m2(A.yatak), 'parke-acik', [[yx0, yx1, yz0, yz1]]]
+    ]);
+
+    // From the listing photos: wall columns and piers, and the built-in coat cupboard in the antre
+    fixture(ctx, 'kolon', 0, 0.3, D - 0.3, D, H, mat.wall);                        // salon, window end of the dark wall
+    fixture(ctx, 'duvar çıkıntısı', W - 1.1, W - 1.0, 0, 0.3, H, mat.wall);        // salon corner block, the door goes through it
+    fixture(ctx, 'duvar çıkıntısı', W - 0.1, W, 0, 0.3, H, mat.wall);
+    hg.add(box(0.9, H - 2.05, 0.3, mat.wall, W - 0.55, 2.05, 0.15));
+    [W - 1.0 + 0.025, W - 0.1 - 0.025].forEach(x => hg.add(box(0.05, 2.1, 0.32, mat.trim, x, 0, 0.15)));
+    fixture(ctx, 'duvar çıkıntısı', W - 0.12, W, D - 0.3, D, H, mat.wall);         // thin pier at the far end of the salon's dark wall
+    fixture(ctx, 'kolon', ex0, ex0 + 0.4, D - 0.37, D, H, mat.wall);               // ebeveyn, dark wall meets the door wall
+    fixture(ctx, 'kolon', ex1 - 0.3, ex1, D - 0.25, D, H, mat.wall);               // ebeveyn, window end of the dark wall
+    fixture(ctx, 'duvar çıkıntısı', yx0, yx0 + 0.3, yz0, yz0 + 1.73, H, mat.wall); // yatak odası, beside the door
+    fixture(ctx, 'portmanto', W + 0.15, W + 1.35, -0.4, yz1, 2.4, lightOak);       // past the salon door, before the banyo door
+    // Kitchen: counter along the long wall, tall fridge cupboard at the door end
+    const kc = kx1 - 0.65;
+    fixture(ctx, 'mutfak tezgâhı', kx0, kc, top, top + 0.6, 0.86, mat.white);
+    hg.add(box(kc - kx0, 0.04, 0.62, counterTop, (kx0 + kc) / 2, 0.86, top + 0.29));
+    hg.add(box(0.6, 0.01, 0.45, mat.dark, kx0 + 0.9, 0.9, top + 0.26));
+    hg.add(box(0.7, 0.01, 0.42, steel, kx0 + 1.9, 0.9, top + 0.25));
+    [[kx0, kx0 + 1.15], [kx0 + 2.3, kc]].forEach(([a, b]) => hg.add(box(b - a, 0.7, 0.35, mat.white, (a + b) / 2, 1.45, top + 0.175)));
+    fixture(ctx, 'buzdolabı', kc, kx1, top, top + 0.65, 1.85, steel);
+    // Banyo
+    fixture(ctx, 'duş', bx0, bx0 + 0.9, e0 + 0.9, e0 + 1.82, 0.05, white);
+    glassPanel(0.9, 0.02, bx0 + 0.45, e0 + 0.9);
+    fixture(ctx, 'lavabo', bx0, bx0 + 0.45, e0 + 0.1, e0 + 0.7, 0.85, white);
+    fixture(ctx, 'klozet', bx0, bx0 + 0.38, bz1 - 0.6, bz1 - 0.05, 0.4, white);
+    hg.add(box(0.18, 0.4, 0.38, white, bx0 + 0.09, 0.4, bz1 - 0.325));
+    // Eb. banyo: shower, washbasin and WC along the back wall, so the door on the ebeveyn side stays clear
+    fixture(ctx, 'duş', bx0, bx0 + 0.8, D - 0.8, D, 0.05, white);
+    glassPanel(0.8, 0.02, bx0 + 0.4, D - 0.79);
+    fixture(ctx, 'lavabo', bx0 + 0.9, bx0 + 1.35, D - 0.45, D, 0.85, white);
+    fixture(ctx, 'klozet', bx0 + 1.5, bx0 + 1.88, D - 0.55, D, 0.4, white);
+    hg.add(box(0.38, 0.4, 0.18, white, bx0 + 1.69, 0.4, D - 0.09));
+    // Accent walls from the listing photos, painted on the inside of the back wall; they hide with it when the camera is outside.
+    const paint = (x0, x1, color) => { const g = makeWall([0, 1], [(x0 + x1) / 2, D + T / 2]); const m = M(color, 0.9); m.color.convertSRGBToLinear(); g.add(box(x1 - x0, H, 0.006, m, (x0 + x1) / 2, 0, D - 0.003)); };
+    paint(0.3, W - 0.12, 0x4b3a31);                                               // salon: dark brown
+    paint(ex0 + 0.4, ex1 - 0.3, 0x2e3b4e);                                        // ebeveyn: navy
+    ctx.dims = { W, D, ex0, ex1, yx0, yx1, yz0, top, balX0 };
+  }
+
+  // ---------- House 3: 2+1 A-B-E-F Blok, A tipi, scaled from the sales plan (net areas from the plan).
+  // Salon x 0–5,85, z 0–3,93; balkon and mutfak to its right, the two bedrooms to its left, antre, banyo and giriş holü below.
+  function buildABEF(ctx) {
+    const W = 5.85, D = 3.93;
+    roomFloor(0, W, 0, D, 'parke');
+    ctx.places.push({ name: 'Salon', x0: 0, x1: W, z0: 0, z1: D });
+    // Outside walls
+    wall(-T, W + T, -T, 0, [0, -1], [[2.2, 3.6, 'win']]);                       // salon window
+    wall(-T, 0, -T, 0.95, [-1, 0]);
+    wall(-4.2, 0, 0.95, 1.05, [0, -1]);
+    wall(-4.2, -4.1, 0.95, 7.7, [-1, 0], [[1.9, 2.9, 'win'], [5.5, 6.8, 'win']]); // bedroom windows
+    wall(-4.2, 3.85, 7.6, 7.7, [0, 1]);
+    wall(3.75, W + T, 6.5, 6.6, [0, 1], [[4.35, 5.25, 'door']]);               // entrance
+    wall(W, 8.95, 5.7, 5.8, [0, 1]);
+    wall(8.85, 8.95, 1.98, 5.8, [1, 0], [[3.0, 4.2, 'win']]);                  // kitchen window
+    // Balcony parapet
+    wall(W + T, 8.95, 0.5, 0.6, [0, -1], [], 1.0);
+    wall(8.85, 8.95, 0.6, 1.98, [1, 0], [], 1.0);
+    // Inside walls
+    wall(W, W + T, 0, 6.5, null, [[0.75, 1.55, 'door'], [4.2, 5.0, 'door']]);  // balkon and mutfak doors
+    wall(W + T, 8.85, 1.98, 2.08);                                              // balkon–mutfak
+    wall(-T, 0, 1.05, 4.03);                                                    // salon–yatak odası 2
+    wall(-4.1, -T, 3.93, 4.03, null, [[-0.95, -0.2, 'door']]);                  // yatak odası 2 door
+    wall(0, W, 3.93, 4.03, null, [[3.9, 5.4, 'pass']]);                         // salon–antre opening
+    wall(-1.1, -1.0, 4.03, 5.15, null, [[4.15, 4.95, 'door']]);                 // yatak odası 1 door
+    wall(-1.1, 3.85, 5.15, 5.25, null, [[1.5, 2.2, 'door']]);                   // banyo door
+    wall(1.3, 1.4, 5.25, 7.6);
+    wall(3.75, 3.85, 5.25, 7.6);
+
+    door(ctx, 'giriş kapısının', 5.25, 6.5, [-1, 0], [0, -1], 0.9, true, entryDoor);
+    door(ctx, 'mutfak kapısının', W + T, 4.2, [0, 1], [1, 0], 0.8);
+    door(ctx, 'balkon kapısının', W, 0.75, [0, 1], [-1, 0], 0.8);
+    door(ctx, 'yatak odası 2 kapısının', -0.2, 3.93, [-1, 0], [0, -1], 0.75);
+    door(ctx, 'yatak odası 1 kapısının', -1.1, 4.15, [0, 1], [-1, 0], 0.8);
+    door(ctx, 'banyo kapısının', 1.5, 5.25, [1, 0], [0, 1], 0.7);
+
+    addRooms(ctx, [
+      ['Yatak odası 1', '17,00 m²', 'parke', [[-4.1, -1.1, 4.03, 7.6], [-1.1, 1.3, 5.25, 7.6]]],
+      ['Yatak odası 2', '11,50 m²', 'parke', [[-4.1, -T, 1.05, 3.93]]],
+      ['Mutfak', '10,50 m²', 'tile', [[W + T, 8.85, 2.08, 5.7]]],
+      ['Balkon', '4,00 m²', 'tile', [[W + T, 8.85, 0.6, 1.98]]],
+      ['Antre', '4,00 m²', 'tile', [[-1.0, 3.85, 4.03, 5.15]]],
+      ['Giriş holü', '5,00 m²', 'tile', [[3.85, W, 4.03, 6.5]]],
+      ['Banyo', '6,00 m²', 'tile', [[1.4, 3.75, 5.25, 7.6]]]
+    ]);
+
+    fixture(ctx, 'mutfak tezgâhı', 8.25, 8.85, 2.08, 4.9, 0.86, mat.white);
+    hg.add(box(0.62, 0.04, 2.82, counterTop, 8.54, 0.86, 3.49));
+    hg.add(box(0.45, 0.01, 0.6, mat.dark, 8.56, 0.9, 2.6));
+    hg.add(box(0.42, 0.01, 0.7, steel, 8.57, 0.9, 3.6));
+    [[2.08, 3.0], [4.2, 4.9]].forEach(([a, b]) => hg.add(box(0.35, 0.7, b - a, mat.white, 8.675, 1.45, (a + b) / 2)));
+    fixture(ctx, 'buzdolabı', 8.2, 8.85, 4.95, 5.6, 1.85, steel);
+    fixture(ctx, 'lavabo', 2.6, 3.2, 5.25, 5.7, 0.85, white);
+    fixture(ctx, 'klozet', 3.2, 3.75, 5.95, 6.33, 0.4, white);
+    hg.add(box(0.18, 0.4, 0.38, white, 3.66, 0.4, 6.14));
+    fixture(ctx, 'duş', 2.85, 3.75, 6.7, 7.6, 0.05, white);
+    glassPanel(0.9, 0.02, 3.3, 6.71);
+  }
 
   // Furniture builders. Local front faces +z, width along x.
   function sofa(Wd, f) {
@@ -510,15 +887,23 @@ window.addEventListener('error', e => {
     }
     return g;
   }
+  // Bohemia berjer 79 × 85 × 90 (kelebek.com): solid oak side frames (front leg rising into the armrest, rear leg under the seat),
+  // a thick upholstered seat at 45 cm on 17 cm legs, and a rounded cushion back; plain fabric, ekru by default.
   function armchair(f) {
-    const mat = withFabric(f);
-    const Wd = 0.79, Dp = 0.85, g = new THREE.Group(), arm = 0.1;
-    [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => g.add(cyl(0.02, 0.014, 0.14, mat.oak, sx * (Wd / 2 - 0.06), 0, sz * (Dp / 2 - 0.06))));
-    g.add(box(Wd, 0.2, Dp, mat.fabric, 0, 0.14, 0));
-    g.add(box(arm, 0.28, Dp - 0.1, mat.oak, -Wd / 2 + arm / 2, 0.34, 0.05));
-    g.add(box(arm, 0.28, Dp - 0.1, mat.oak, Wd / 2 - arm / 2, 0.34, 0.05));
-    g.add(box(Wd, 0.9 - 0.34, 0.16, mat.fabric, 0, 0.34, -Dp / 2 + 0.08));
-    g.add(box(Wd - 2 * arm - 0.02, 0.12, Dp - 0.2, mat.fabric2, 0, 0.34, 0.08));
+    const mat = withFabric(f), g = new THREE.Group(), Wd = 0.79, fx = Wd / 2 - 0.025, aw = 0.05;
+    for (const sx of [-1, 1]) {
+      const x = sx * fx;
+      const front = box(aw, 0.62, 0.07, mat.oak, x, 0, 0.33); front.rotation.x = -0.06; g.add(front);   // front leg up to the armrest, leaning back a little
+      g.add(box(aw, 0.06, 0.64, mat.oak, x, 0.56, 0.06));                                             // armrest
+      const rear = box(aw, 0.5, 0.07, mat.oak, x, 0, -0.3); rear.rotation.x = 0.12; g.add(rear);       // rear leg, splayed back
+    }
+    const inner = Wd - 2 * aw;
+    g.add(box(inner, 0.28, 0.62, mat.fabric, 0, 0.17, 0.07));                                           // seat, top at 45 cm
+    const back = new THREE.Group();
+    back.add(box(inner, 0.39, 0.18, mat.fabric, 0, 0, 0));
+    const top = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, inner, 28), mat.fabric);
+    top.rotation.z = Math.PI / 2; top.position.set(0, 0.39, 0); back.add(shade(top));
+    back.position.set(0, 0.42, -0.31); back.rotation.x = -0.1; g.add(back);                            // cushion back, top at about 90 cm
     return g;
   }
   function chair(f) {
@@ -744,8 +1129,9 @@ window.addEventListener('error', e => {
   }
   function tvOnWall(g, cx, y, zb) {
     g.add(box(0.4, 0.3, 0.03, mat.dark, cx, y + 0.27, zb + 0.015)); // bracket
-    g.add(box(1.45, 0.835, 0.03, mat.dark, cx, y, zb + 0.045));
-    g.add(box(1.43, 0.815, 0.004, mat.screen, cx, y + 0.01, zb + 0.062));
+    // Samsung 65R85H on a wall bracket: body 1442,9 × 831,2 × 52 mm (samsung.com/tr)
+    g.add(box(1.443, 0.8312, 0.052, mat.dark, cx, y, zb + 0.056));
+    g.add(box(1.425, 0.813, 0.004, mat.screen, cx, y + 0.009, zb + 0.084));
   }
   const cubeWhite = M(0xf3f2ef, 0.5), cubeGrey = M(0xbdbcb8, 0.8);
   function wallCube(g, cx, y, zb, frame = cubeOak, back = cubeBack) {
@@ -775,6 +1161,116 @@ window.addEventListener('error', e => {
     drum.position.set(0, H - sh / 2, 0); drum.castShadow = true; g.add(drum);
     return g;
   }
+  // IKEA BESTÅ TV combination 300 × 42 × 138 (from the IKEA planner): oak-effect frames on short white legs, herringbone oak doors.
+  // Left: 60 × 64 frame, 38 cm door below, open box above. Middle: 180 × 38 bench, three doors, the middle one glass in a white frame.
+  // Right: 60 × 128 frame, 64 cm door below, open shelves above. A 65" TV stands on the bench.
+  const bestaOak = M(0xd9c19d, 0.65), bestaLeg = M(0xe6e4df, 0.4, { metalness: 0.2 }), bestaWhite = M(0xf2f1ee, 0.5);
+  let chevCanvas = null;
+  const chevCache = {};
+  function chevMat(w, h) {
+    const k = w + 'x' + h;
+    if (chevCache[k]) return chevCache[k];
+    if (!chevCanvas) {
+      chevCanvas = document.createElement('canvas'); chevCanvas.width = chevCanvas.height = 256;
+      const g = chevCanvas.getContext('2d');
+      g.fillStyle = '#c99d6c'; g.fillRect(0, 0, 256, 256);
+      // Two halves of slanted oak strips meeting at the middle: one chevron across the door
+      for (let s = 0; s < 2; s++) {
+        g.save(); g.beginPath(); g.rect(s * 128, 0, 128, 256); g.clip();
+        const x0 = s * 128, x1 = x0 + 128, rise = 77, bw = 16;
+        for (let i = -12; i < 18; i++) {
+          const y = i * bw, v = Math.abs(i * 7) % 5, l = Math.abs(i * 11) % 9;
+          g.fillStyle = `hsl(${27 + v}, ${44 + l}%, ${50 + (Math.abs(i * 5) % 8)}%)`;
+          g.beginPath();
+          if (!s) { g.moveTo(x0, y); g.lineTo(x1, y + rise); g.lineTo(x1, y + rise + bw); g.lineTo(x0, y + bw); }
+          else { g.moveTo(x0, y + rise); g.lineTo(x1, y); g.lineTo(x1, y + bw); g.lineTo(x0, y + rise + bw); }
+          g.closePath(); g.fill();
+          g.strokeStyle = 'rgba(90,55,25,0.35)'; g.lineWidth = 1; g.stroke();
+        }
+        g.restore();
+      }
+    }
+    const t = new THREE.CanvasTexture(chevCanvas);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(1, h / w); t.encoding = THREE.sRGBEncoding;
+    return (chevCache[k] = new THREE.MeshStandardMaterial({ map: t, roughness: 0.6 }));
+  }
+  function bestaFrame(g, cx, w, y0, h, Dp) {
+    const t = 0.018;
+    g.add(box(w, t, Dp, bestaOak, cx, y0, 0));
+    g.add(box(w, t, Dp, bestaOak, cx, y0 + h - t, 0));
+    for (const s of [-1, 1]) g.add(box(t, h, Dp, bestaOak, cx + s * (w / 2 - t / 2), y0, 0));
+    g.add(box(w, h, 0.006, bestaOak, cx, y0, -Dp / 2 + 0.003));
+  }
+  function bestaDoor(g, cx, w, y0, h, Dp) { g.add(box(w - 0.006, h - 0.004, 0.02, chevMat(w, h), cx, y0 + 0.002, Dp / 2 + 0.01)); }
+  function bestaLegs(g, xs, Dp) { xs.forEach(x => [-1, 1].forEach(sz => g.add(cyl(0.018, 0.018, 0.1, bestaLeg, x, 0, sz * (Dp / 2 - 0.06))))); }
+  function bestaTv() {
+    const g = new THREE.Group(), Dp = 0.4, L = 0.1, zf = Dp / 2 + 0.01;
+    // Left: 60 × 64, door below, open box above
+    bestaLegs(g, [-1.45, -0.95], Dp); bestaFrame(g, -1.2, 0.6, L, 0.64, Dp);
+    g.add(box(0.564, 0.018, Dp - 0.02, bestaWhite, -1.2, L + 0.38, 0.01));
+    bestaDoor(g, -1.2, 0.6, L, 0.38, Dp);
+    // Middle: 180 × 38 bench
+    bestaLegs(g, [-0.85, -0.3, 0.3, 0.85], Dp); bestaFrame(g, 0, 1.8, L, 0.38, Dp);
+    [-0.3, 0.3].forEach(x => g.add(box(0.018, 0.38, Dp, bestaOak, x, L, 0)));
+    bestaDoor(g, -0.6, 0.6, L, 0.38, Dp); bestaDoor(g, 0.6, 0.6, L, 0.38, Dp);
+    const gw = 0.594, gh = 0.376;
+    [L + 0.002, L + gh - 0.038].forEach(y => g.add(box(gw, 0.04, 0.02, bestaWhite, 0, y, zf)));
+    for (const s of [-1, 1]) g.add(box(0.04, gh, 0.02, bestaWhite, s * (gw / 2 - 0.02), L + 0.002, zf));
+    const pane = box(gw - 0.08, gh - 0.08, 0.006, mat.glass, 0, L + 0.042, zf); pane.castShadow = false; g.add(pane);
+    g.add(box(0.564, 0.018, Dp - 0.04, bestaWhite, 0, L + 0.19, 0));
+    // Right: 60 × 128, 64 cm door below, open shelves above
+    bestaLegs(g, [0.95, 1.45], Dp); bestaFrame(g, 1.2, 0.6, L, 1.28, Dp);
+    [0.64, 0.86, 1.07].forEach(y => g.add(box(0.564, 0.018, Dp - 0.02, bestaOak, 1.2, L + y, 0.01)));
+    bestaDoor(g, 1.2, 0.6, L, 0.64, Dp);
+    // Samsung 65R85H on its feet on the bench (samsung.com/tr): body 1442,9 × 831,2 × 52 mm, 867,1 mm tall on the stand,
+    // so the feet lift it 35,9 mm; feet 1209,5 mm apart overall and 256,8 mm deep.
+    const top = L + 0.38, lift = 0.8671 - 0.8312;
+    for (const s of [-1, 1]) g.add(box(0.06, lift, 0.257, mat.dark, s * 0.575, top, -0.03));
+    g.add(box(1.443, 0.8312, 0.052, mat.dark, 0, top + lift, -0.05));
+    g.add(box(1.425, 0.813, 0.004, mat.screen, 0, top + lift + 0.009, -0.022));
+    return g;
+  }
+  // IKEA BESTÅ TV combination 240 × 41,3 × 152,8 (from the IKEA planner): four 60 cm frames on the floor, each with a white door below
+  // and an open shelf above, white top; a 60 cm tall unit with three glass-door boxes stands on the right one; 65" TV on the bench.
+  function besta240() {
+    const g = new THREE.Group(), Dp = 0.413, Hb = 0.46, t = 0.018, zf = Dp / 2, Ht = 1.528;
+    g.add(box(2.4, t, Dp, bestaOak, 0, 0, 0));
+    [-1.2, -0.6, 0, 0.6, 1.2].forEach(x => g.add(box(t, Hb, Dp, bestaOak, Math.max(-1.2 + t / 2, Math.min(1.2 - t / 2, x)), 0, 0)));
+    g.add(box(2.4, Hb, 0.006, bestaOak, 0, 0, -Dp / 2 + 0.003));
+    g.add(box(2.4 - 2 * t, t, Dp - 0.02, bestaOak, 0, 0.27, 0.01));
+    g.add(box(1.8, 0.02, Dp, bestaWhite, -0.3, Hb - 0.02, 0));
+    g.add(box(0.6, 0.02, Dp, bestaOak, 0.9, Hb - 0.02, 0));
+    [-0.9, -0.3, 0.3, 0.9].forEach(x => g.add(box(0.596, 0.262, 0.02, bestaWhite, x, 0.005, zf + 0.01)));
+    // tall unit on the right module: three boxes with glass doors in oak frames
+    const th = Ht - Hb, bh = th / 3;
+    bestaFrame(g, 0.9, 0.6, Hb, th, Dp - 0.02);
+    for (let i = 0; i < 3; i++) {
+      const y = Hb + i * bh;
+      if (i) g.add(box(0.564, t, Dp - 0.04, bestaOak, 0.9, y, 0));
+      g.add(box(0.59, 0.03, 0.02, bestaOak, 0.9, y + 0.005, zf));
+      g.add(box(0.59, 0.03, 0.02, bestaOak, 0.9, y + bh - 0.035, zf));
+      for (const sx of [-1, 1]) g.add(box(0.03, bh - 0.01, 0.02, bestaOak, 0.9 + sx * 0.28, y + 0.005, zf));
+      const pane = box(0.53, bh - 0.07, 0.006, mat.glass, 0.9, y + 0.035, zf); pane.castShadow = false; g.add(pane);
+    }
+    // Samsung 65" on its feet, centred 90 cm from the left end
+    const lift = 0.8671 - 0.8312, cx = -0.3;
+    for (const s of [-1, 1]) g.add(box(0.06, lift, 0.257, mat.dark, cx + s * 0.575, Hb, -0.03));
+    g.add(box(1.443, 0.8312, 0.052, mat.dark, cx, Hb + lift, -0.05));
+    g.add(box(1.425, 0.813, 0.004, mat.screen, cx, Hb + lift + 0.009, -0.022));
+    return g;
+  }
+  // Bohemia zigon sehpa: three white nesting tables, 41 × 31 × 50, 54 × 35,5 × 54,7 and 67 × 40 × 59,5 cm, 18 mm tops,
+  // rounded legs and a low rail on each side only, so the smaller ones slide in from the front. Back edges line up.
+  function zigon() {
+    const g = new THREE.Group(), backZ = -0.2;
+    [[0.67, 0.40, 0.595], [0.54, 0.355, 0.547], [0.41, 0.31, 0.50]].forEach(([w, d, h]) => {
+      const cz = backZ + d / 2, lx = w / 2 - 0.025, lz = d / 2 - 0.025;
+      g.add(box(w, 0.018, d, mat.white, 0, h - 0.018, cz));
+      [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sz]) => g.add(cyl(0.02, 0.02, h - 0.018, mat.white, sx * lx, 0, cz + sz * lz)));
+      for (const sx of [-1, 1]) g.add(box(0.03, 0.04, d - 0.05, mat.white, sx * lx, 0.05, cz));
+    });
+    return g;
+  }
   function coffeeTable() {
     const g = new THREE.Group();
     g.add(box(1.2, 0.03, 0.6, mat.white, 0, 0.37, 0));
@@ -797,9 +1293,11 @@ window.addEventListener('error', e => {
     sofa2: { name: "2'li koltuk (yataklı)", dims: '197 × 101 × 76,5 cm', w: 1.97, d: 1.01, fabric: true, make: it => sofa(1.97, it.color) },
     sofa3: { name: "3'lü koltuk (yataklı)", dims: '233 × 101 × 76,5 cm', w: 2.33, d: 1.01, fabric: true, make: it => sofa(2.33, it.color) },
     berjer: { name: 'Berjer', dims: '79 × 85 × 90 cm', w: 0.79, d: 0.85, fabric: true, make: it => armchair(it.color) },
+    zigon: { name: "Zigon sehpa (3'lü)", dims: '67 × 40 × 59,5 cm (41 / 54 / 67 geniş)', w: 0.67, d: 0.4, make: zigon },
     sehpa: { name: 'Orta sehpa', dims: '120 × 60 × 40 cm', w: 1.2, d: 0.6, make: coffeeTable },
-    tvset: { name: 'TV ünitesi seti + 65" TV', dims: '300 × 42 × 138 cm', w: 3.0, d: 0.42, make: tvSet },
-    tvduvar: { name: 'TV ünitesi 240 + 3 küp + 65" TV (duvarda)', dims: '240 × 42 × 155 cm', w: 2.4, d: 0.42, make: tvWall },
+    tvset: { name: 'BESTÅ TV ünitesi kombinasyonu + Samsung 65R85H', dims: '300 × 42 × 138 cm', w: 3.0, d: 0.42, price: 30472, make: bestaTv },
+    besta240: { name: 'BESTÅ TV ünitesi 240 + Samsung 65R85H', dims: '240 × 41,3 × 152,8 cm', w: 2.4, d: 0.413, make: besta240 },
+    tvduvar: { name: 'TV ünitesi 240 + 3 küp + Samsung 65R85H (duvarda)', dims: '240 × 42 × 155 cm', w: 2.4, d: 0.42, make: tvWall },
     kitaplik: { name: 'Kitaplık', dims: '120 × 38,6 × 171,3 cm', w: 1.2, d: 0.386, make: bookcase },
     table: { name: 'Açılır masa', dims: '160–200 × 90 × 76 cm', w: 1.6, d: 0.9, make: diningTable },
     chair: { name: 'Sandalye', dims: '48,5 × 63 × 84,5 cm', w: 0.485, d: 0.55, fabric: true, make: it => chair(it.color) },
@@ -807,7 +1305,7 @@ window.addEventListener('error', e => {
     billy: { name: 'Köşe kitaplık (meşe)', dims: '96,3/96,3 × 28 × 202 cm', w: 0.963, d: 0.963, make: billyCorner,
       parts: [[-0.4815, 0.4815, -0.4815, -0.2015], [-0.4815, -0.2015, -0.2015, 0.4815], [-0.2015, 0.07, -0.2015, 0.07]] }
   };
-  Object.keys(CATALOG).forEach(k => { CATALOG[k].brand = k === 'billy' || k === 'lamba' ? 'Diğer' : 'Kelebek Bohemia'; });
+  Object.keys(CATALOG).forEach(k => { CATALOG[k].brand = ['tvset', 'besta240', 'tvduvar', 'lamba'].includes(k) ? 'IKEA' : k === 'billy' ? 'Diğer' : 'Kelebek Bohemia'; });
 
   // Brand products added by the household. Each is drawn with the shape of its type, sized to its own measurements (cm).
   const SHAPES = {
@@ -822,8 +1320,8 @@ window.addEventListener('error', e => {
     shelf: { name: 'Kitaplık / raf', def: [120, 38, 170] },
     box: { name: 'Diğer', def: [100, 50, 50] }
   };
-  Object.entries({ karyola: 'bed', komodin: 'cabinet', sifonyer: 'cabinet', dolap4: 'cabinet', dolap5: 'cabinet', dresuar: 'table', ayna: 'box', lamba: 'box', tvduvar: 'cabinet', benchpuf: 'pouf', sofa2: 'sofa', sofa3: 'sofa', berjer: 'armchair',
-    sehpa: 'coffee', tvset: 'cabinet', kitaplik: 'shelf', table: 'table', chair: 'chair', konsol: 'cabinet', billy: 'shelf' }).forEach(([k, s]) => { if (CATALOG[k]) CATALOG[k].shape = s; });
+  Object.entries({ karyola: 'bed', komodin: 'cabinet', sifonyer: 'cabinet', dolap4: 'cabinet', dolap5: 'cabinet', dresuar: 'table', ayna: 'box', lamba: 'box', tvduvar: 'cabinet', besta240: 'cabinet', benchpuf: 'pouf', sofa2: 'sofa', sofa3: 'sofa', berjer: 'armchair',
+    sehpa: 'coffee', zigon: 'coffee', tvset: 'cabinet', kitaplik: 'shelf', table: 'table', chair: 'chair', konsol: 'cabinet', billy: 'shelf' }).forEach(([k, s]) => { if (CATALOG[k]) CATALOG[k].shape = s; });
   function scaled(g, bw, bd, bh, w, d, h) { g.scale.set(w / bw, h / bh, d / bd); return g; }
   function makeShape(p, f) {
     const w = p.w / 100, d = p.d / 100, h = p.h / 100;
@@ -871,23 +1369,79 @@ window.addEventListener('error', e => {
   try { rawProducts = JSON.parse(localStorage.getItem(PRODUCTS_CACHE) || '{}') || {}; } catch (e) { rawProducts = {}; }
   registerProducts(rawProducts);
 
-  // Default layout: rectangle in cm in house coordinates (x to the right, y down the plan; salon is 0–610 × 0–404) and rotation
-  // (0 faces down the plan, 1 faces right, 2 faces up, 3 faces left)
-  const DEFAULT = [
-    ['tvset', 70, 0, 370, 42, 0], ['sofa3', 100, 284, 333, 385, 2], ['sofa2', 0, 90, 101, 287, 1],
-    ['sehpa', 160, 160, 280, 220, 0],
-    ['table', 470, 130, 560, 290, 1],
-    ['chair', 415, 150, 470, 198.5, 1], ['chair', 415, 220, 470, 268.5, 1],
-    ['chair', 560, 150, 615, 198.5, 3], ['chair', 560, 220, 615, 268.5, 3],
-    ['karyola', 1052.5, 159, 1227.5, 385, 2], ['komodin', 996.5, 339, 1052.5, 385, 2], ['komodin', 1227.5, 339, 1283.5, 385, 2],
-    ['dolap4', 1100, -268, 1287.2, -204.6, 0], ['sifonyer', 915, 100, 961, 198.4, 1]
-  ];
-  // New key for the new flat: layouts saved for the previous house do not fit these rooms.
-  const STORE_KEY = 'bohemia-ac-blok-layout-v1';
+  // ---------- The houses. Default layouts: rectangle in cm in house coordinates [type, x0, y0, x1, y1, rotation]
+  // (rotation 0 faces down the plan, 1 faces right, 2 faces up, 3 faces left). Each house keeps its own saved layout.
+  const HOUSES = {
+    orijinal: {
+      name: 'Hilal Konutları', store: 'bohemia-salon-layout-v1', build: buildOriginal,
+      sub: 'Hilal Konutları · salon 4,70 × 3,59 m · tavan ≈ 2,6 m · eşyalar evin her odasına taşınabilir',
+      note: 'Oda ölçüleri yerinde ölçülen değerler; kapı, pencere, kalorifer ve TV prizinin yeri fotoğraflardan tahmin.',
+      salon: [0, 4.7, 0, 3.59], bounds: [-4.04, 4.8, -2.2, 6.16],
+      persp: { pos: [-0.9, 4.0, 6.0], target: [2.35, 0.5, 1.8] },
+      sun: { pos: [8.2, 3.6, 1.2], target: [2.35, 0, 1.8] },
+      lights: [[2.35, 1.8], [2.95, -1.1], [-2.57, 4.06], [1.14, 4.88]],
+      layout: [
+        ['sofa2', 112, 0, 309, 101, 0], ['sofa2', 0, 150, 101, 347, 1],
+        ['sehpa', 150, 160, 270, 220, 0], ['tvset', 101, 317, 401, 359, 2],
+        ['table', 350, 95, 440, 255, 1],
+        ['chair', 302, 122, 350, 170, 1], ['chair', 302, 182, 350, 230, 1],
+        ['chair', 371, 50, 419, 95, 0], ['chair', 371, 255, 419, 300, 2],
+        ['billy', 0, 0, 96.3, 96.3, 0],
+        ['karyola', -394, 318.5, -168, 493.5, 1], ['komodin', -394, 262.5, -348, 318.5, 1], ['komodin', -394, 493.5, -348, 549.5, 1],
+        ['sifonyer', -300, 206, -201.6, 252, 0], ['dolap4', -90, 542.6, 97.2, 606, 2]
+      ]
+    },
+    ac: {
+      name: 'VIP Kurtköy', store: 'bohemia-ac-blok-layout-v1', build: buildAC, wallColor: 0xd9ccb5,   // warm cream, as in the listing photos
+      sub: 'VIP Kurtköy · 2+1 A&C Blok · net 78,84 m² · salon 24,64 m² · eşyalar evin her odasına taşınabilir',
+      note: 'Ev, 2+1 A&C Blok (Luna 2+1) planından kuruldu: her odanın zemini plandaki net alana tam eşit, oda biçimleri ve yerleşimi tam daire planının oranlarına göre, kapı, pencere, kolon ve duvar çıkıntıları ilan fotoğraflarına göre (birkaç santimetre paylı); tavan yüksekliği 2,6 m varsayıldı. Mutfak tezgâhı ve banyo eşyaları sabittir.',
+      salon: [0, 6.0, 0, 4.19], bounds: [-1.6, 13.15, -2.77, 4.29],
+      persp: { pos: [-1.4, 5.4, 8.8], target: [3.0, 0.5, 2.09] },
+      sun: { pos: [-3, 9, 8], target: [5.8, 0, 0.7] },
+      lights: [[3.0, 2.09], [2.47, -1.4], [10.23, 2.1], [11.1, -1.3], [5.6, -0.6], [7.1, 1.4]],
+      layout: [
+        ['tvset', 60, 0, 360, 42, 0], ['sofa3', 90, 318, 323, 419, 2], ['sofa2', 0, 100, 101, 297, 1],
+        ['sehpa', 150, 180, 270, 240, 0],
+        ['table', 450, 150, 540, 310, 1],
+        ['chair', 395, 170, 450, 218.5, 1], ['chair', 395, 240, 450, 288.5, 1],
+        ['chair', 540, 170, 595, 218.5, 3], ['chair', 540, 240, 595, 288.5, 3],
+        ['karyola', 955, 193, 1130, 419, 2], ['komodin', 899, 373, 955, 419, 2], ['komodin', 1130, 373, 1186, 419, 2],
+        ['dolap4', 1000, -265, 1187.2, -201.6, 0], ['sifonyer', 823, 100, 869, 198.4, 1]
+      ]
+    },
+    abef: {
+      name: 'Kayışehri', store: 'bohemia-abef-a-layout-v1', build: buildABEF,
+      sub: 'Kayışehri · 2+1 A-B-E-F Blok, A tipi · net 81,00 m² · salon 23,00 m² · eşyalar evin her odasına taşınabilir',
+      note: 'Ev, A-B-E-F Blok A tipi daire planından ölçeklendi: oda alanları plandaki net değerler, duvar, kapı ve pencere yerleri plandan yaklaşık; tavan yüksekliği 2,6 m varsayıldı. Mutfak tezgâhı ve banyo eşyaları sabittir.',
+      salon: [0, 5.85, 0, 3.93], bounds: [-4.2, 8.95, -0.1, 7.7],
+      persp: { pos: [-1.2, 5.2, -4.4], target: [2.92, 0.5, 1.96] },
+      lights: [[2.92, 1.96], [7.4, 3.9], [-2.1, 2.5], [-2.6, 5.8], [1.5, 4.6], [2.6, 6.4], [4.85, 5.2]],
+      layout: [
+        ['sofa2', 120, 0, 317, 101, 0], ['sofa3', 0, 80, 101, 313, 1],
+        ['sehpa', 150, 160, 270, 220, 0], ['tvset', 30, 351, 330, 393, 2],
+        ['table', 430, 170, 520, 330, 1],
+        ['chair', 375, 190, 430, 238.5, 1], ['chair', 375, 260, 430, 308.5, 1],
+        ['chair', 520, 190, 575, 238.5, 3], ['chair', 520, 260, 575, 308.5, 3],
+        ['billy', -106.3, 105, -10, 201.3, 3],
+        ['karyola', -340, 534, -165, 760, 2], ['komodin', -396, 714, -340, 760, 2], ['komodin', -165, 714, -109, 760, 2],
+        ['dolap4', -90, 696.6, 97.2, 760, 2], ['sifonyer', -410, 430, -364, 528.4, 1]
+      ]
+    }
+  };
+  const HOUSE_KEY = 'bohemia-house-v1';
+  let house = null, PLACES = [], DOORS = [], FIXTURES = [], houseLights = [];
+  let STORE_KEY = '';
   let nextId = 1;
-  const defaultState = () => DEFAULT.map(([type, x0, y0, x1, y1, r]) => ({ id: nextId++, type, x: (x0 + x1) / 200, z: (y0 + y1) / 200, r }));
   // Rotation in quarter turns, in half steps: 0, 0.5 (45°), 1 (90°) … 3.5
   const normR = r => { const v = Math.round(Number(r) * 2) / 2; return isFinite(v) ? ((v % 4) + 4) % 4 : 0; };
+  // A default saved from the page ("Varsayılan yap", shared through the store when available) wins over the built-in one.
+  const DEFAULTS_CACHE = 'bohemia-defaults-cache-v1';
+  let savedDefaults = {}, houseKey = '';
+  try { const d = JSON.parse(localStorage.getItem(DEFAULTS_CACHE) || '{}'); if (d && typeof d === 'object') savedDefaults = d; } catch (e) { /* no cache */ }
+  const defaultState = () => {
+    const sd = savedDefaults[houseKey], saved = sd && Array.isArray(sd.items) ? parseLayout(sd.items) : null;
+    return saved || house.layout.map(([type, x0, y0, x1, y1, r]) => ({ id: nextId++, type, x: (x0 + x1) / 200, z: (y0 + y1) / 200, r }));
+  };
   function parseLayout(s) {
     if (!Array.isArray(s) || !s.length) return null;
     s.forEach(i => { if (i && i.type === 'tvunit') i.type = 'tvset'; });
@@ -904,16 +1458,33 @@ window.addEventListener('error', e => {
     return defaultState();
   }
   const layoutJson = () => JSON.stringify(items.map(({ type, x, z, r, color }) => ({ type, x, z, r, color })));
-  // On the computer, the app's server.js keeps the layout in data/layout-ac-blok.json; serverOk turns true once it answers.
-  const LAYOUT_API = 'api/layout/ac-blok';
+  // On the computer, the app's server.js also keeps each house's layout in its data folder; serverOk turns true once it answers.
+  const SERVER_FILE = { orijinal: '', ac: 'ac-blok', abef: 'abef' };
+  const apiFor = k => 'api/layout' + (SERVER_FILE[k] ? '/' + SERVER_FILE[k] : '/' + k);
   let serverOk = false, putTimer = null;
   function pushServer() {
     if (!serverOk) return;
+    const k = houseKey, body = layoutJson();
     clearTimeout(putTimer);
     putTimer = setTimeout(() => {
-      fetch(LAYOUT_API, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: layoutJson() })
-        .catch(() => { /* server stopped: local storage still has it */ });
+      fetch(apiFor(k), { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body }).catch(() => { /* server stopped */ });
     }, 300);
+  }
+  function syncFromServer(k) {
+    fetch(apiFor(k), { cache: 'no-store' }).then(r => {
+      // Only the app's own server.js sends this header; a plain web host (GitHub Pages) does not, so the browser keeps the layout there.
+      if (!r.headers.get('X-Salon-App') || (!r.ok && r.status !== 404)) throw new Error('no app server');
+      serverOk = true;
+      return r.status === 404 ? null : r.json();
+    }).then(data => {
+      if (!serverOk || houseKey !== k || drag) return;
+      const parsed = data && parseLayout(data);
+      if (!parsed) { saveState(); return; } // nothing on file yet: store the current layout
+      select(null); items.forEach(removeItemObject); items = parsed; items.forEach(addItemObject);
+      history.length = 0; lastSnap = snap(); undoBtn.disabled = true;
+      refreshFootprints(); setChip(); renderLegend();
+      try { localStorage.setItem(STORE_KEY, layoutJson()); } catch (e) { /* ignore */ }
+    }).catch(() => { /* opened without the server: browser storage only */ });
   }
   function saveState() {
     try { localStorage.setItem(STORE_KEY, layoutJson()); } catch (e) { /* ignore */ }
@@ -921,7 +1492,7 @@ window.addEventListener('error', e => {
   }
 
   const furn = new THREE.Group(); scene.add(furn);
-  let items = loadState();
+  let items = [];
   let selected = null;
 
   function extents(it) {
@@ -975,9 +1546,8 @@ window.addEventListener('error', e => {
     clampItem(it); syncObject(it);
   }
   function removeItemObject(it) { furn.remove(it.obj); scene.remove(it.fp); renderer.shadowMap.needsUpdate = true; }
-  items.forEach(addItemObject);
 
-  // Overlap and door-swing checks
+  // Overlap, built-in and door-swing checks
   // Footprint pieces in room coordinates (an L-shaped corner unit has two)
   function partsOf(it) {
     const c = CATALOG[it.type];
@@ -1010,7 +1580,6 @@ window.addEventListener('error', e => {
     return pa.some(qa => pb.some(qb => quadsMeet(qa, qb)));
   }
   // Door swings: hinge, leaf length, and the quarter (sx, sz) the leaf sweeps.
-  const DOORS = DOOR_SWINGS;
   function doorHits(it) {
     const hit = [];
     DOORS.forEach(dr => {
@@ -1026,7 +1595,9 @@ window.addEventListener('error', e => {
     });
     return hit;
   }
-  const tucks = (a, b) => (a.type === 'chair' && b.type === 'table') || (a.type === 'table' && b.type === 'chair');
+  // Chairs slide under anything shaped like a table: the dining table, the dresuar, and brand tables added to the catalog.
+  const shapeOf = it => CATALOG[it.type] && CATALOG[it.type].shape;
+  const tucks = (a, b) => (shapeOf(a) === 'chair' && shapeOf(b) === 'table') || (shapeOf(a) === 'table' && shapeOf(b) === 'chair');
   function problems(it) {
     const list = [];
     const onWall = x => !!CATALOG[x.type].wall;
@@ -1108,10 +1679,10 @@ window.addEventListener('error', e => {
     swatches.hidden = !on;
     if (on) swatches.querySelectorAll('.sw').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.k === (FAB[selected.color] ? selected.color : 'ekru'))));
   }
-  // Undo: a snapshot of the layout before each change, kept for this visit only.
+  // Undo: a snapshot of the layout before each change, kept for this visit and this house only.
   const snap = () => JSON.stringify(items.map(({ id, type, x, z, r, color }) => ({ id, type, x, z, r, color })));
   const history = [];
-  let lastSnap = snap();
+  let lastSnap = '[]';
   const undoBtn = document.getElementById('undo-btn');
   function recordHistory() {
     const now = snap();
@@ -1132,22 +1703,6 @@ window.addEventListener('error', e => {
     refreshFootprints(); setChip(); renderLegend(); saveState();
   }
   undoBtn.addEventListener('click', undo);
-
-  // Load the layout saved by the app's server, so every browser on this computer opens the same one.
-  fetch(LAYOUT_API, { cache: 'no-store' }).then(r => {
-    // Only the app's own server.js sends this header; a plain web host (GitHub Pages) does not, so the browser keeps the layout there.
-    if (!r.headers.get('X-Salon-App') || (!r.ok && r.status !== 404)) throw new Error('no app server');
-    serverOk = true;
-    return r.status === 404 ? null : r.json();
-  }).then(data => {
-    if (!serverOk) return;
-    const parsed = data && parseLayout(data);
-    if (!parsed) { saveState(); return; } // nothing on file yet: store the current layout
-    select(null); items.forEach(removeItemObject); items = parsed; items.forEach(addItemObject);
-    lastSnap = snap(); history.length = 0; undoBtn.disabled = true;
-    refreshFootprints(); setChip(); renderLegend();
-    try { localStorage.setItem(STORE_KEY, layoutJson()); } catch (e) { /* ignore */ }
-  }).catch(() => { /* opened without the server: browser storage only */ });
 
   // Layout transfer: copy the layout as text in one copy of the model, paste it into another.
   const ioDlg = document.getElementById('io-dlg'), ioText = document.getElementById('io-text'), ioMsg = document.getElementById('io-msg');
@@ -1171,8 +1726,10 @@ window.addEventListener('error', e => {
     if (!parsed) { ioSay('Bu metin bir yerleşim değil. Diğer sürümdeki metnin tamamını yapıştırın.', true); return; }
     select(null); items.forEach(removeItemObject); items = parsed; items.forEach(addItemObject); changed();
     if (ioDlg.close) ioDlg.close(); else ioDlg.removeAttribute('open');
-    const chip = document.getElementById('chip');
-    if (chip) chip.innerHTML = '<b>' + parsed.length + ' eşya yerleştirildi.</b> <span class="m">Beğenmezseniz Ctrl+Z ile geri alın.</span>';
+    chip.innerHTML = '';
+    const b = document.createElement('b'); b.textContent = parsed.length + ' eşya yerleştirildi.';
+    const s = document.createElement('span'); s.className = 'm'; s.textContent = ' Beğenmezseniz Ctrl+Z ile geri alın.';
+    chip.append(b, s);
   });
   ioText.addEventListener('keydown', e => e.stopPropagation());
 
@@ -1187,8 +1744,8 @@ window.addEventListener('error', e => {
     const on = !document.body.classList.contains('full');
     if (on) {
       setFull(true);
-      const el = document.documentElement;
-      if (el.requestFullscreen && document.fullscreenEnabled) el.requestFullscreen().catch(() => { /* not allowed here: keep the in-page full view */ });
+      const root = document.documentElement;
+      if (root.requestFullscreen && document.fullscreenEnabled) root.requestFullscreen().catch(() => { /* not allowed here: keep the in-page full view */ });
     } else {
       setFull(false);
       if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
@@ -1232,9 +1789,38 @@ window.addEventListener('error', e => {
     items.push(it); addItemObject(it); select(it); changed();
   }
   document.getElementById('add-btn').addEventListener('click', () => placeItem(addSel.value));
+  function rotateSelected() {
+    if (!selected) return;
+    selected.r = normR(selected.r + 0.5); clampItem(selected); syncObject(selected); changed();
+  }
+  function removeSelected() {
+    if (!selected) return;
+    removeItemObject(selected); items = items.filter(i => i !== selected); select(null); changed();
+  }
+  rotBtn.addEventListener('click', rotateSelected);
+  delBtn.addEventListener('click', removeSelected);
+  document.getElementById('reset-btn').addEventListener('click', () => {
+    items.forEach(removeItemObject); items = defaultState(); items.forEach(addItemObject); select(null); changed();
+  });
+  // Save this house's current layout as its default: "Başa al" and people opening the page for the first time start from it.
+  const defBtn = document.getElementById('def-btn');
+  function chipNote(bold, rest) { chip.innerHTML = ''; chip.append(el('b', null, bold), el('span', 'm', rest ? ' ' + rest : '')); }
+  defBtn.addEventListener('click', async () => {
+    const entry = { items: JSON.parse(layoutJson()), at: Date.now() };
+    savedDefaults = Object.assign({}, savedDefaults, { [houseKey]: entry });
+    cacheSet(DEFAULTS_CACHE, savedDefaults);
+    if (!db) { chipNote(house.name + ' için varsayılan kaydedildi.', 'Yalnızca bu tarayıcıda; "Başa al" artık bu yerleşime döner.'); return; }
+    defBtn.disabled = true;
+    try {
+      await db.collection('defaults').doc(houseKey).set(entry);
+      chipNote(house.name + ' için varsayılan kaydedildi.', '"Başa al" ve sayfayı ilk kez açanlar bu yerleşimle başlar.');
+    } catch (e) {
+      chipNote('Varsayılan ortak kayda yazılamadı.', 'Yalnızca bu tarayıcıda kaydedildi.');
+    } finally { defBtn.disabled = false; }
+  });
 
   // Catalog: every piece that can be placed, to review together. Brand products and review marks live in the
-  // artifact's shared store when it is available, otherwise in this browser.
+  // artifact's shared store when it is available, otherwise in this browser. Shared by all houses.
   var catalogReady;
   const STATUS = { begen: 'Beğendik', belki: 'Belki', elendi: 'Elendi' };
   const REVIEW_CACHE = 'bohemia-review-cache-v1';
@@ -1282,7 +1868,7 @@ window.addEventListener('error', e => {
         top.append(el('span', 'pc-brand', c.brand), sel);
         card.append(top, el('h3', null, c.pname || c.name));
         card.append(el('p', null, (SHAPES[c.shape] ? SHAPES[c.shape].name + ' · ' : '') + c.dims));
-        card.append(el('p', null, [c.price != null ? tl(c.price) : null, counts[k] ? 'Evde ' + counts[k] + ' adet' : 'Evde yok'].filter(Boolean).join(' · ')));
+        card.append(el('p', null, [c.price != null ? tl(c.price) : null, counts[k] ? 'Bu evde ' + counts[k] + ' adet' : 'Bu evde yok'].filter(Boolean).join(' · ')));
         if (c.note) card.append(el('p', null, c.note));
         const act = el('div', 'pc-act');
         const put = el('button', 'btn', 'Odaya koy');
@@ -1296,7 +1882,7 @@ window.addEventListener('error', e => {
           let armed = null;
           del.addEventListener('click', async () => {
             if (!armed) {
-              del.textContent = counts[k] ? `Evdeki ${counts[k]} adetle silinsin mi?` : 'Silinsin mi?'; del.classList.add('danger');
+              del.textContent = counts[k] ? `Bu evdeki ${counts[k]} adetle silinsin mi?` : 'Silinsin mi?'; del.classList.add('danger');
               armed = setTimeout(() => { armed = null; del.textContent = 'Sil'; del.classList.remove('danger'); }, 4000);
               return;
             }
@@ -1399,7 +1985,7 @@ window.addEventListener('error', e => {
   });
 
   catalogReady = true;
-  fillAddSelect(); fillBrandFilter(); renderCatalog();
+  fillAddSelect(); fillBrandFilter();
   catSync.textContent = 'Ürünler şimdilik bu tarayıcıda saklanıyor.';
   // Shared store: everyone who opens the page sees the same brand products and review marks.
   (async () => {
@@ -1424,20 +2010,20 @@ window.addEventListener('error', e => {
       if (snap.metadata.fromCache && snap.empty) return;
       review = m; cacheSet(REVIEW_CACHE, m); renderCatalog();
     }, () => { /* marks stay as last seen */ });
+    db.collection('defaults').onSnapshot(qs => {
+      if (qs.metadata.fromCache && qs.empty) return;
+      const m = {};
+      qs.docs.forEach(doc => { const d = doc.exists && doc.data(); if (d && Array.isArray(d.items)) m[doc.id] = { items: d.items, at: Number(d.at) || 0 }; });
+      savedDefaults = m; cacheSet(DEFAULTS_CACHE, m);
+      // Someone who has not arranged this house yet starts from the shared default.
+      let mine = null;
+      try { mine = localStorage.getItem(STORE_KEY); } catch (e) { /* ignore */ }
+      if (!mine && !history.length && !drag && m[houseKey]) {
+        select(null); items.forEach(removeItemObject); items = defaultState(); items.forEach(addItemObject);
+        lastSnap = snap(); refreshFootprints(); setChip(); renderLegend();
+      }
+    }, () => { /* defaults stay as last seen */ });
   })();
-  function rotateSelected() {
-    if (!selected) return;
-    selected.r = normR(selected.r + 0.5); clampItem(selected); syncObject(selected); changed();
-  }
-  function removeSelected() {
-    if (!selected) return;
-    removeItemObject(selected); items = items.filter(i => i !== selected); select(null); changed();
-  }
-  rotBtn.addEventListener('click', rotateSelected);
-  delBtn.addEventListener('click', removeSelected);
-  document.getElementById('reset-btn').addEventListener('click', () => {
-    items.forEach(removeItemObject); items = defaultState(); items.forEach(addItemObject); select(null); changed();
-  });
 
   // Picking and dragging on the floor
   const ray = new THREE.Raycaster(), pt = new THREE.Vector2();
@@ -1517,32 +2103,30 @@ window.addEventListener('error', e => {
     }
   });
 
-  // Lights
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x8a6a50, 0.6));
-  // A ceiling light in each main room
-  [[W / 2, D / 2], [2.85, -1.45], [11.27, 2.0], [12.28, -1.3], [7.4, -0.55], [7.8, 1.25]].forEach(([x, z]) => {
-    const l = new THREE.PointLight(0xfff0dc, 0.45, 7); l.position.set(x, H - 0.2, z); scene.add(l);
-  });
-  const sun = new THREE.DirectionalLight(0xfff4e2, 1.0);
-  sun.position.set(-3, 9, 8); sun.target.position.set(6.5, 0, -0.23);
-  sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
-  Object.assign(sun.shadow.camera, { left: -9, right: 9, top: 9, bottom: -9, near: 0.5, far: 30 });
-  sun.shadow.bias = -0.0006;
+  // Lights: the sky light and sun are shared; ceiling lights belong to the house.
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8a6a50, hasEnv ? 0 : 0.6));
+  const sun = new THREE.DirectionalLight(0xfff1dc, hasEnv ? 1.7 : 1.0);
+  // A large, sharp shadow map; the normal bias keeps shadow edges clean without acne on walls and floors.
+  const shadowSize = renderer.capabilities.maxTextureSize >= 8192 ? 4096 : 2048;
+  sun.castShadow = true; sun.shadow.mapSize.set(shadowSize, shadowSize);
+  sun.shadow.bias = -0.0003; sun.shadow.normalBias = 0.02;
   scene.add(sun, sun.target);
 
   // Camera views
+  const centerOf = b => [(b[0] + b[1]) / 2, (b[2] + b[3]) / 2];
+  // Camera height that fits a wx × dz area in a straight-down view
+  const fitH = (wx, dz) => 1.1 * Math.max(dz, wx / camera.aspect) / (2 * Math.tan(camera.fov * Math.PI / 360));
   function eyeView() {
-    const s = items.find(i => i.type === 'sofa2' || i.type === 'sofa3') || { x: 2.1, z: 0.5, r: 0 };
+    const [cx, cz] = centerOf(house.salon);
+    const s = items.find(i => i.type === 'sofa2' || i.type === 'sofa3') || { x: cx, z: cz, r: 0 };
     const a = s.r * Math.PI / 2, fx = Math.sin(a), fz = Math.cos(a);
     return { pos: [s.x - fx * 0.05, 1.1, s.z - fz * 0.05], target: [s.x + fx * 3, 0.95, s.z + fz * 3] };
   }
-  // Camera height that fits a wx × dz area in a straight-down view
-  const fitH = (wx, dz) => 1.1 * Math.max(dz, wx / camera.aspect) / (2 * Math.tan(camera.fov * Math.PI / 360));
   const views = {
-    persp: () => ({ pos: [-1.4, 5.2, 8.4], target: [W / 2, 0.5, D / 2] }),
-    top: () => ({ pos: [W / 2, fitH(W + 0.4, D + 0.4), D / 2 + 0.01], target: [W / 2, 0, D / 2] }),
+    persp: () => house.persp,
+    top: () => { const s = house.salon, [cx, cz] = centerOf(s); return { pos: [cx, fitH(s[1] - s[0] + 0.4, s[3] - s[2] + 0.4), cz + 0.01], target: [cx, 0, cz] }; },
     eye: eyeView,
-    house: () => ({ pos: [6.5, fitH(16.2 * 1.3, 8.9 * 1.3), -0.22], target: [6.5, 0, -0.23] }) // extra room: wall tops sit closer to the camera
+    house: () => { const b = house.bounds, [cx, cz] = centerOf(b); return { pos: [cx, fitH((b[1] - b[0]) * 1.3, (b[3] - b[2]) * 1.3), cz + 0.01], target: [cx, 0, cz] }; }
   };
   let tween = null;
   function goTo(key, instant) {
@@ -1551,10 +2135,54 @@ window.addEventListener('error', e => {
     if (instant || reduceMotion) { camera.position.copy(to.pos); controls.target.copy(to.target); controls.update(); tween = null; return; }
     tween = { t0: performance.now(), fromPos: camera.position.clone(), fromTarget: controls.target.clone(), to };
   }
-  ['persp', 'top', 'eye', 'house'].forEach(k => document.getElementById('view-' + k).addEventListener('click', () => {
-    ['persp', 'top', 'eye', 'house'].forEach(o => document.getElementById('view-' + o).setAttribute('aria-pressed', String(o === k)));
-    goTo(k);
-  }));
+  const VIEW_KEYS = ['persp', 'top', 'eye', 'house'];
+  function pressView(k) { VIEW_KEYS.forEach(o => document.getElementById('view-' + o).setAttribute('aria-pressed', String(o === k))); }
+  VIEW_KEYS.forEach(k => document.getElementById('view-' + k).addEventListener('click', () => { pressView(k); goTo(k); }));
+
+  // Switching houses: drop the current house group and furniture, build the chosen house, load its own layout.
+  function disposeGroup(g) {
+    g.traverse(o => {
+      if (o.geometry) o.geometry.dispose();
+      if (o.material && o.material.map) { o.material.map.dispose(); o.material.dispose(); }
+    });
+  }
+  const houseSel = document.getElementById('house-sel');
+  Object.entries(HOUSES).forEach(([k, h]) => { const o = el('option', null, h.name); o.value = k; houseSel.append(o); });
+  function loadHouse(key, first) {
+    const h = HOUSES[key] ? HOUSES[key] : HOUSES.ac;
+    const hKey = HOUSES[key] ? key : 'ac';
+    // Each house its own wall paint; a house colour is given as seen in photos (sRGB), so it is converted to the renderer's linear colour
+    if (h.wallColor) mat.wall.color.set(h.wallColor).convertSRGBToLinear(); else mat.wall.color.set(0xe9e6df);
+    select(null);
+    items.forEach(removeItemObject); items = [];
+    if (hg) { scene.remove(hg); disposeGroup(hg); }
+    hg = new THREE.Group(); scene.add(hg); walls = []; floorRects = [];
+    const ctx = { places: [], doors: [], fixtures: [] };
+    h.build(ctx);
+    shadeFloorEdges(); capWalls();
+    PLACES = ctx.places; DOORS = ctx.doors; FIXTURES = ctx.fixtures;
+    h.lights.forEach(([x, z]) => { const l = new THREE.PointLight(0xfff0dc, (h.lights.length > 1 ? 0.45 : 0.55) * (hasEnv ? 0.6 : 1), 8); l.position.set(x, H - 0.2, z); hg.add(l); });
+    const b = h.bounds, [cx, cz] = centerOf(b), half = Math.max(b[1] - b[0], b[3] - b[2]) / 2 + 1.5;
+    if (h.sun) { sun.position.set(...h.sun.pos); sun.target.position.set(...h.sun.target); }
+    else { sun.position.set(cx - 6, 9, cz + 6); sun.target.position.set(cx, 0, cz); }
+    Object.assign(sun.shadow.camera, { left: -half, right: half, top: half, bottom: -half, near: 0.5, far: 40 });
+    sun.shadow.camera.updateProjectionMatrix();
+    house = h; houseKey = hKey; STORE_KEY = h.store;
+    items = loadState();
+    items.forEach(addItemObject);
+    history.length = 0; lastSnap = snap(); undoBtn.disabled = true;
+    clearTimeout(putTimer);
+    syncFromServer(hKey);
+    document.getElementById('house-sub').textContent = h.sub;
+    document.getElementById('house-note').textContent = 'Mobilya ölçüleri kelebek.com ürün sayfalarından. ' + h.note +
+      ' Çakışan, sabit bir parçanın üstüne ya da bir kapının açılma alanına giren eşyanın tabanı kırmızı görünür. Her evin yerleşimi ayrı saklanır (bilgisayardaki uygulamada data klasörüne, internetten açıldığında bu tarayıcıya); katalog bütün evlerde ortaktır.';
+    houseSel.value = hKey;
+    try { localStorage.setItem(HOUSE_KEY, hKey); } catch (e) { /* ignore */ }
+    renderer.shadowMap.needsUpdate = true;
+    refreshFootprints(); setChip(); renderLegend();
+    pressView('persp'); goTo('persp', first);
+  }
+  houseSel.addEventListener('change', () => loadHouse(houseSel.value, false));
 
   function resize() {
     const w = stage.clientWidth, h = stage.clientHeight;
@@ -1562,9 +2190,10 @@ window.addEventListener('error', e => {
   }
   new ResizeObserver(resize).observe(stage);
   resize();
+  let startHouse = 'ac';
+  try { startHouse = localStorage.getItem(HOUSE_KEY) || 'ac'; } catch (e) { /* storage unavailable */ }
+  loadHouse(startHouse, true);
   setThemeColors();
-  select(null); renderLegend();
-  goTo('persp', true);
 
   const ease = t => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
   let lastT = 0;
@@ -1602,6 +2231,5 @@ window.addEventListener('error', e => {
   requestAnimationFrame(loop);
 })();
 </script>
-
 </body>
 </html>
