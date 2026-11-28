@@ -2313,6 +2313,9 @@ window.addEventListener('error', e => {
   const shadowSize = renderer.capabilities.maxTextureSize >= 8192 ? 4096 : 2048;
   sun.castShadow = true; sun.shadow.mapSize.set(shadowSize, shadowSize);
   sun.shadow.bias = -0.0003; sun.shadow.normalBias = 0.02;
+  // Walls hidden to look into a room move to layer 1: the camera no longer sees them, but the sun's shadow pass still does,
+  // so shadows never change when walls hide or show.
+  sun.shadow.camera.layers.enable(1);
   scene.add(sun, sun.target);
 
   // Camera views
@@ -2443,7 +2446,8 @@ window.addEventListener('error', e => {
     controls.update();
     walls.forEach(w => {
       const vx = camera.position.x - w.c[0], vz = camera.position.z - w.c[1];
-      w.g.visible = !(vx * w.n[0] + vz * w.n[1] > 0.05);
+      const hide = vx * w.n[0] + vz * w.n[1] > 0.05;
+      if (w.hidden !== hide) { w.hidden = hide; w.g.traverse(o => o.layers.set(hide ? 1 : 0)); }
     });
     renderer.render(scene, camera);
     requestAnimationFrame(loop);
