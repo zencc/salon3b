@@ -1,6 +1,6 @@
 # Salon 3B — Ev planlayıcı
 
-Üç evin 3B modeli ve mobilya yerleşimi (Hilal Konutları, VIP Kurtköy, Kayışehri); bu bilgisayarda çalışan küçük bir uygulama.
+Üç evin 3B modeli ve mobilya yerleşimi (Hilal Konutları, VIP Kurtköy, VIP Kurtköy B, Kayışehri); bu bilgisayarda çalışan küçük bir uygulama.
 
 ## Çalıştırma
 
@@ -13,7 +13,7 @@ Gerekenler: Node.js (kurulu) ve internet bağlantısı (three.js ve yazı tipler
 
 - `index.html` — modelin kendisi (oda, mobilyalar, kontroller)
 - `server.js` — sayfayı sunar ve yerleşimi kaydeder; ek paket gerektirmez
-- `data/` — her evin kaydedilen yerleşimi: `layout.json` Hilal Konutları, `layout-ac-blok.json` VIP Kurtköy, `layout-abef.json` Kayışehri. Yedek almak ya da başka bilgisayara taşımak için bu klasörü kopyalayın.
+- `data/` — her evin kaydedilen yerleşimi: `layout.json` Hilal Konutları, `layout-ac-blok.json` VIP Kurtköy, `layout-ac-blok-b.json` VIP Kurtköy B, `layout-abef.json` Kayışehri. Yedek almak ya da başka bilgisayara taşımak için bu klasörü kopyalayın.
 
 ## Kısayollar
 

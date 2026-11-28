@@ -445,7 +445,7 @@ window.addEventListener('error', e => {
     const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding; t.anisotropy = maxAniso;
     const w = Math.min(1.5, maxW), h = w * 200 / 512;
     const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: t, transparent: true, depthWrite: false }));
-    m.rotation.x = -Math.PI / 2; m.position.set(cx, 0.012, cz); hg.add(m);
+    m.rotation.x = -Math.PI / 2; m.position.set(cx, 0.012, cz); m.userData.label = true; hg.add(m);
   }
   function roomFloor(x0, x1, z0, z1, kind) {
     const rw = x1 - x0, rd = z1 - z0;
@@ -1515,6 +1515,23 @@ window.addEventListener('error', e => {
       ]
     }
   };
+  // VIP Kurtköy B: the same flat as VIP Kurtköy, mirrored left to right. The house is built as VIP Kurtköy and then flipped
+  // (x → −x) in loadHouse; camera, sun and the default layout are given here already flipped. Its layout is kept separately.
+  {
+    const a = HOUSES.ac, mx = p => [-p[0], p[1], p[2]];
+    HOUSES.acb = Object.assign({}, a, {
+      name: 'VIP Kurtköy B', store: 'bohemia-ac-blok-b-layout-v1', mirror: true, mirrorOf: 'ac',
+      sub: a.sub.replace('VIP Kurtköy ·', 'VIP Kurtköy B (VIP Kurtköy\'ün ayna simetriği) ·'),
+      salon: [-a.salon[1], -a.salon[0], a.salon[2], a.salon[3]],
+      bounds: [-a.bounds[1], -a.bounds[0], a.bounds[2], a.bounds[3]],
+      persp: { pos: mx(a.persp.pos), target: mx(a.persp.target) },
+      sun: { pos: mx(a.sun.pos), target: mx(a.sun.target) },
+      layout: a.layout.map(([t, x0, y0, x1, y1, r]) => [t, -x1, y0, -x0, y1, (4 - r) % 4])
+    });
+    const { abef } = HOUSES; delete HOUSES.abef; HOUSES.abef = abef;   // keep the menu order: Hilal, VIP Kurtköy, VIP Kurtköy B, Kayışehri
+  }
+  // A layout mirrored left to right: positions flip and every piece turns to face the mirrored way.
+  const mirrorItems = list => list.map(i => Object.assign({}, i, { x: -Number(i.x), r: normR(4 - (Number(i.r) || 0)) }));
   const HOUSE_KEY = 'bohemia-house-v1';
   let house = null, PLACES = [], DOORS = [], FIXTURES = [], houseLights = [];
   let STORE_KEY = '';
@@ -1526,7 +1543,10 @@ window.addEventListener('error', e => {
   let savedDefaults = {}, houseKey = '';
   try { const d = JSON.parse(localStorage.getItem(DEFAULTS_CACHE) || '{}'); if (d && typeof d === 'object') savedDefaults = d; } catch (e) { /* no cache */ }
   const defaultState = () => {
-    const sd = savedDefaults[houseKey], saved = sd && Array.isArray(sd.items) ? parseLayout(sd.items) : null;
+    const sd = savedDefaults[houseKey];
+    let saved = sd && Array.isArray(sd.items) ? parseLayout(sd.items) : null;
+    // A mirrored house with no default of its own starts from its twin's saved default, mirrored.
+    if (!saved && house.mirrorOf) { const md = savedDefaults[house.mirrorOf]; saved = md && Array.isArray(md.items) ? parseLayout(mirrorItems(md.items)) : null; }
     return saved || house.layout.map(([type, x0, y0, x1, y1, r]) => ({ id: nextId++, type, x: (x0 + x1) / 200, z: (y0 + y1) / 200, r }));
   };
   function parseLayout(s) {
@@ -1546,7 +1566,7 @@ window.addEventListener('error', e => {
   }
   const layoutJson = () => JSON.stringify(items.map(({ type, x, z, r, color }) => ({ type, x, z, r, color })));
   // On the computer, the app's server.js also keeps each house's layout in its data folder; serverOk turns true once it answers.
-  const SERVER_FILE = { orijinal: '', ac: 'ac-blok', abef: 'abef' };
+  const SERVER_FILE = { orijinal: '', ac: 'ac-blok', acb: 'ac-blok-b', abef: 'abef' };
   const apiFor = k => 'api/layout' + (k in SERVER_FILE ? (SERVER_FILE[k] ? '/' + SERVER_FILE[k] : '') : '/' + k);
   let serverOk = false, putTimer = null;
   function pushServer() {
@@ -2265,6 +2285,15 @@ window.addEventListener('error', e => {
     const ctx = { places: [], doors: [], fixtures: [] };
     h.build(ctx);
     shadeFloorEdges(); capWalls();
+    if (h.mirror) {
+      // Flip the whole house left to right; room labels are flipped back so they still read normally.
+      hg.scale.x = -1;
+      hg.traverse(o => { if (o.userData.label) o.scale.x = -1; });
+      const mr = r => Object.assign({}, r, { x0: -r.x1, x1: -r.x0 });
+      ctx.places = ctx.places.map(mr); ctx.fixtures = ctx.fixtures.map(mr);
+      ctx.doors = ctx.doors.map(d => Object.assign({}, d, { x: -d.x, sx: -d.sx }));
+      walls.forEach(w => { w.c = [-w.c[0], w.c[1]]; w.n = [-w.n[0], w.n[1]]; });
+    }
     PLACES = ctx.places; DOORS = ctx.doors; FIXTURES = ctx.fixtures;
     h.lights.forEach(([x, z]) => { const l = new THREE.PointLight(0xfff0dc, (h.lights.length > 1 ? 0.45 : 0.55) * (hasEnv ? 0.6 : 1), 8); l.position.set(x, H - 0.2, z); hg.add(l); });
     const b = h.bounds, [cx, cz] = centerOf(b), half = Math.max(b[1] - b[0], b[3] - b[2]) / 2 + 1.5;
