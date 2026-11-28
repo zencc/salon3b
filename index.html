@@ -1118,16 +1118,39 @@ window.addEventListener('error', e => {
     g.add(box(1.44, 0.83, 0.03, mat.screen, 0, 0.64, -0.06));
     return g;
   }
+  // Shelves and base with half-round ends (seen from above), as in the product photo.
+  function roundSlab(w, d, t, m, x, y, z) {
+    const r = d / 2, sh = new THREE.Shape();
+    sh.moveTo(-w / 2 + r, -r); sh.lineTo(w / 2 - r, -r);
+    sh.absarc(w / 2 - r, 0, r, -Math.PI / 2, Math.PI / 2, false);
+    sh.lineTo(-w / 2 + r, r);
+    sh.absarc(-w / 2 + r, 0, r, Math.PI / 2, Math.PI * 1.5, false);
+    const geo = new THREE.ExtrudeGeometry(sh, { depth: t, bevelEnabled: false, curveSegments: 24 });
+    geo.rotateX(-Math.PI / 2);
+    const mesh = new THREE.Mesh(geo, m); mesh.position.set(x, y, z); return shade(mesh);
+  }
+  // Oak upright seen from the side: straight at the back, its front top and bottom corners rounded.
+  function roundUpright(t, h, d, m, x, y, z) {
+    const r = Math.min(h / 2, d * 0.45), u0 = -d / 2, u1 = d / 2, sh = new THREE.Shape();
+    sh.moveTo(u0, 0); sh.lineTo(u1 - r, 0);
+    sh.absarc(u1 - r, r, r, -Math.PI / 2, 0, false);
+    sh.lineTo(u1, h - r);
+    sh.absarc(u1 - r, h - r, r, 0, Math.PI / 2, false);
+    sh.lineTo(u0, h); sh.lineTo(u0, 0);
+    const geo = new THREE.ExtrudeGeometry(sh, { depth: t, bevelEnabled: false, curveSegments: 20 });
+    geo.rotateY(-Math.PI / 2);
+    const mesh = new THREE.Mesh(geo, m); mesh.position.set(x + t / 2, y, z); return shade(mesh);
+  }
   function bookcase() {
     const Wd = 1.2, Ht = 1.713, Dp = 0.386, g = new THREE.Group();
-    g.add(box(Wd, 0.04, Dp, mat.white, 0, 0, 0));
-    [0.36, 0.69, 1.02, 1.35].forEach(y => g.add(box(Wd, 0.025, Dp, mat.white, 0, y, 0)));
-    for (const s of [-1, 1]) g.add(box(0.025, Ht - 0.16, Dp - 0.06, mat.oak, s * 0.2, 0.04, 0));
+    g.add(roundSlab(Wd, Dp, 0.04, mat.white, 0, 0, 0));
+    [0.36, 0.69, 1.02, 1.35].forEach(y => g.add(roundSlab(Wd, Dp, 0.025, mat.white, 0, y, 0)));
+    for (const s of [-1, 1]) g.add(roundUpright(0.025, Ht - 0.16, Dp - 0.06, mat.oak, s * 0.2, 0.04, 0));
     for (const s of [-1, 1]) {
       const top = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.025, 28, 1, false, 0, Math.PI), mat.oak);
       top.rotation.z = Math.PI / 2; top.rotation.y = Math.PI / 2; top.position.set(s * 0.2, Ht - 0.12, 0); g.add(shade(top));
     }
-    [[-0.45, 0.04], [0.45, 0.36], [0, 0.69], [-0.45, 1.02], [0.45, 1.02]].forEach(([x, y]) => g.add(box(0.025, 0.305, Dp - 0.06, mat.oak, x, y + 0.025, 0)));
+    [[-0.45, 0.04], [0.45, 0.36], [0, 0.69], [-0.45, 1.02], [0.45, 1.02]].forEach(([x, y]) => g.add(roundUpright(0.025, 0.305, Dp - 0.06, mat.oak, x, y + 0.025, 0)));
     return g;
   }
   // 240 × 42 × 50 TV unit on wooden legs: a 180 bench (oak top, open cable niche, three white doors) and a 60 cm box with a white door,
