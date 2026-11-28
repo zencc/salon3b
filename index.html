@@ -525,7 +525,8 @@ window.addEventListener('error', e => {
   const white = M(0xf7f7f4, 0.35), counterTop = M(0x55524d, 0.4), steel = M(0xc9ccce, 0.35, { metalness: 0.4 });
   function fixture(ctx, name, x0, x1, z0, z1, h, m) {
     ctx.fixtures.push({ name, x0, x1, z0, z1 });
-    hg.add(box(x1 - x0, h, z1 - z0, m, (x0 + x1) / 2, 0, (z0 + z1) / 2));
+    // h = 0 marks a wall-hung piece drawn separately: only its floor area counts, nothing is drawn level with the floor (that flickers).
+    if (h > 0.001) hg.add(box(x1 - x0, h, z1 - z0, m, (x0 + x1) / 2, 0, (z0 + z1) / 2));
   }
   function glassPanel(w, d, x, z) { const b = box(w, 1.9, d, mat.glass, x, 0.05, z); b.castShadow = false; hg.add(b); }
 
