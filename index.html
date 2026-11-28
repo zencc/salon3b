@@ -824,8 +824,10 @@ window.addEventListener('error', e => {
     hg.add(box(0.38, 0.4, 0.18, white, bx0 + 1.69, 0.4, D - 0.09));
     // Accent walls from the listing photos, painted on the inside of the back wall; they hide with it when the camera is outside.
     const paint = (x0, x1, color) => { const g = makeWall([0, 1], [(x0 + x1) / 2, D + T / 2]); const m = M(color, 0.9); m.color.convertSRGBToLinear(); g.add(box(x1 - x0, H, 0.006, m, (x0 + x1) / 2, 0, D - 0.003)); };
-    paint(0.3, W - 0.12, 0x4b3a31);                                               // salon: dark brown
-    paint(ex0 + 0.4, ex1 - 0.3, 0x2e3b4e);                                        // ebeveyn: navy
+    if (!ctx.plainWalls) {                                                        // VIP Kurtköy B has no dark walls
+      paint(0.3, W - 0.12, 0x4b3a31);                                             // salon: dark brown
+      paint(ex0 + 0.4, ex1 - 0.3, 0x2e3b4e);                                      // ebeveyn: navy
+    }
     ctx.dims = { W, D, ex0, ex1, yx0, yx1, yz0, top, balX0 };
   }
 
@@ -1523,7 +1525,7 @@ window.addEventListener('error', e => {
   {
     const a = HOUSES.ac, mx = p => [-p[0], p[1], p[2]];
     HOUSES.acb = Object.assign({}, a, {
-      name: 'VIP Kurtköy B', store: 'bohemia-ac-blok-b-layout-v1', mirror: true, mirrorOf: 'ac',
+      name: 'VIP Kurtköy B', store: 'bohemia-ac-blok-b-layout-v1', mirror: true, mirrorOf: 'ac', plainWalls: true,
       sub: a.sub.replace('VIP Kurtköy ·', 'VIP Kurtköy B (VIP Kurtköy\'ün ayna simetriği) ·'),
       salon: [-a.salon[1], -a.salon[0], a.salon[2], a.salon[3]],
       bounds: [-a.bounds[1], -a.bounds[0], a.bounds[2], a.bounds[3]],
@@ -2285,7 +2287,7 @@ window.addEventListener('error', e => {
     items.forEach(removeItemObject); items = [];
     if (hg) { scene.remove(hg); disposeGroup(hg); }
     hg = new THREE.Group(); scene.add(hg); walls = []; floorRects = [];
-    const ctx = { places: [], doors: [], fixtures: [] };
+    const ctx = { places: [], doors: [], fixtures: [], plainWalls: !!h.plainWalls };
     h.build(ctx);
     shadeFloorEdges(); capWalls();
     if (h.mirror) {
