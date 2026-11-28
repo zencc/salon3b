@@ -1263,6 +1263,47 @@ window.addEventListener('error', e => {
   }
   // The same 240 set mirrored: tall glass-door unit on the left, TV centred 90 cm from the right end.
   function besta240Left() { const g = besta240(); g.scale.x = -1; return g; }
+  // Enza Home Marsana set (enzahome.com.tr), cream fronts with a raised frame, oak top and oak plinth ("bazalı"), small dark knobs.
+  // Middle: TV sehpası 151 × 56 × 47 with four drawers (2 × 2). Each side: bazalı sehpa 50 × 56 × 47 with two drawers, and on it
+  // the açık raflı modül 50 × 135 × 29 (cream frame, oak inside, three open sections), back edges flush. Samsung 65R85H on the middle.
+  const marCream = M(0xe7e0d4, 0.55), marOak = M(0xb98352, 0.6), marKnob = M(0x3a3330, 0.4, { metalness: 0.3 });
+  [marCream, marOak, marKnob].forEach(m => m.color.convertSRGBToLinear());   // colours as seen in the product photos
+  function marsanaBase(g, cx, w, Dp) {
+    const H = 0.56, plinth = 0.035, top = 0.03, bodyH = H - plinth - top, zf = Dp / 2;
+    g.add(box(w - 0.01, plinth, Dp - 0.02, marOak, cx, 0, -0.01));
+    g.add(box(w, bodyH, Dp, marCream, cx, plinth, 0));
+    g.add(box(w + 0.004, top, Dp + 0.004, marOak, cx, H - top, 0));
+    const cols = w > 1 ? 2 : 1, dw = w / cols, dh = bodyH / 2;
+    for (let c = 0; c < cols; c++) for (let r = 0; r < 2; r++) {
+      const x = cx - w / 2 + dw * (c + 0.5), y = plinth + dh * r;
+      g.add(box(dw - 0.006, dh - 0.006, 0.012, marCream, x, y + 0.003, zf + 0.006));
+      // raised frame on the drawer front
+      const fw = dw - 0.05, fh = dh - 0.05, z = zf + 0.014;
+      [y + 0.025, y + dh - 0.035].forEach(yy => g.add(box(fw, 0.01, 0.006, marCream, x, yy, z)));
+      [-1, 1].forEach(s => g.add(box(0.01, fh, 0.006, marCream, x + s * (fw / 2 - 0.005), y + 0.025, z)));
+      const k = new THREE.Mesh(new THREE.SphereGeometry(0.008, 10, 10), marKnob);
+      k.position.set(x, y + dh - 0.06, zf + 0.022); g.add(k);
+    }
+  }
+  function marsanaShelf(g, cx, backZ) {
+    const w = 0.5, Hs = 1.35, d = 0.29, t = 0.02, y0 = 0.56, cz = backZ + d / 2;
+    g.add(box(w - 2 * t, Hs - 0.03, 0.008, marOak, cx, y0, backZ + 0.004));                // oak back
+    for (const s of [-1, 1]) g.add(box(t, Hs - 0.03, d, marCream, cx + s * (w / 2 - t / 2), y0, cz));
+    g.add(box(w, t, d, marCream, cx, y0, cz));
+    g.add(box(w + 0.004, 0.03, d + 0.004, marOak, cx, y0 + Hs - 0.03, cz));               // oak top
+    [0.44, 0.88].forEach(y => g.add(box(w - 2 * t, t, d - 0.01, marCream, cx, y0 + y, cz + 0.005)));
+  }
+  function marsanaSet() {
+    const g = new THREE.Group(), Dp = 0.47, backZ = -Dp / 2;
+    marsanaBase(g, 0, 1.51, Dp);
+    [-1, 1].forEach(s => { const cx = s * (1.51 / 2 + 0.25); marsanaBase(g, cx, 0.5, Dp); marsanaShelf(g, cx, backZ); });
+    // Samsung 65R85H on its feet (samsung.com/tr): body 1442,9 × 831,2 × 52 mm, 35,9 mm lift, feet 1209,5 mm apart, 256,8 mm deep
+    const top = 0.56, lift = 0.8671 - 0.8312;
+    for (const s of [-1, 1]) g.add(box(0.06, lift, 0.257, mat.dark, s * 0.575, top, -0.03));
+    g.add(box(1.443, 0.8312, 0.052, mat.dark, 0, top + lift, -0.05));
+    g.add(box(1.425, 0.813, 0.004, mat.screen, 0, top + lift + 0.009, -0.022));
+    return g;
+  }
   // Bohemia zigon sehpa: three white nesting tables, 41 × 31 × 50, 54 × 35,5 × 54,7 and 67 × 40 × 59,5 cm, 18 mm tops,
   // rounded legs and a low rail on each side only, so the smaller ones slide in from the front. Back edges line up.
   function zigon() {
@@ -1375,6 +1416,8 @@ window.addEventListener('error', e => {
     tvset: { name: 'BESTÅ TV ünitesi kombinasyonu + Samsung 65R85H', dims: '300 × 42 × 138 cm', w: 3.0, d: 0.42, price: 30472, make: bestaTv },
     besta240: { name: 'BESTÅ TV ünitesi 240 + Samsung 65R85H', dims: '240 × 41,3 × 152,8 cm', w: 2.4, d: 0.413, make: besta240 },
     besta240sol: { name: 'BESTÅ TV ünitesi 240, yüksek dolap solda + Samsung 65R85H', dims: '240 × 41,3 × 152,8 cm', w: 2.4, d: 0.413, make: besta240Left },
+    // 14.517,36 + 2 × 6.547,36 + 2 × 5.726,45 TL (enzahome.com.tr, discounted prices); the TV is not included
+    marsana: { name: 'Marsana TV ünitesi seti (151 + 2 × 50 raflı) + Samsung 65R85H', dims: '251 × 47 × 191 cm', w: 2.51, d: 0.47, price: 39065, make: marsanaSet },
     tvduvar: { name: 'TV ünitesi 240 + 3 küp + Samsung 65R85H (duvarda)', dims: '240 × 42 × 155 cm', w: 2.4, d: 0.42, make: tvWall },
     kitaplik: { name: 'Kitaplık', dims: '120 × 38,6 × 171,3 cm', w: 1.2, d: 0.386, make: bookcase },
     table: { name: 'Açılır masa', dims: '160–200 × 90 × 76 cm', w: 1.6, d: 0.9, make: diningTable },
@@ -1399,7 +1442,7 @@ window.addEventListener('error', e => {
     sehpa: [3088.58, KB + 'bohemia-orta-sehpa-3200424246'], zigon: [11384.76, KB + 'bohemia-zigon-sehpa-3200424241']
   };
   Object.entries(PRICES).forEach(([k, [p, url]]) => { if (CATALOG[k]) { if (CATALOG[k].price == null) CATALOG[k].price = p; if (!CATALOG[k].url) CATALOG[k].url = url; } });
-  Object.keys(CATALOG).forEach(k => { CATALOG[k].brand = ['tvset', 'besta240', 'besta240sol', 'tvduvar', 'lamba'].includes(k) ? 'IKEA' : ['camasir', 'kurutma', 'kule'].includes(k) ? 'Arçelik' : 'Kelebek Bohemia'; });
+  Object.keys(CATALOG).forEach(k => { CATALOG[k].brand = ['tvset', 'besta240', 'besta240sol', 'tvduvar', 'lamba'].includes(k) ? 'IKEA' : ['camasir', 'kurutma', 'kule'].includes(k) ? 'Arçelik' : k === 'marsana' ? 'Enza Home' : 'Kelebek Bohemia'; });
 
   // Brand products added by the household. Each is drawn with the shape of its type, sized to its own measurements (cm).
   const SHAPES = {
@@ -1414,7 +1457,7 @@ window.addEventListener('error', e => {
     shelf: { name: 'Kitaplık / raf', def: [120, 38, 170] },
     box: { name: 'Diğer', def: [100, 50, 50] }
   };
-  Object.entries({ karyola: 'bed', komodin: 'cabinet', sifonyer: 'cabinet', dolap4: 'cabinet', dolap5: 'cabinet', dolap6: 'cabinet', darsifonyer: 'cabinet', dresuar: 'table', ayna: 'box', lamba: 'box', tvduvar: 'cabinet', besta240: 'cabinet', besta240sol: 'cabinet', benchpuf: 'pouf', makyajpuf: 'pouf', sofa2: 'sofa', sofa3: 'sofa', berjer: 'armchair',
+  Object.entries({ karyola: 'bed', komodin: 'cabinet', sifonyer: 'cabinet', dolap4: 'cabinet', dolap5: 'cabinet', dolap6: 'cabinet', darsifonyer: 'cabinet', dresuar: 'table', ayna: 'box', lamba: 'box', tvduvar: 'cabinet', besta240: 'cabinet', besta240sol: 'cabinet', marsana: 'cabinet', benchpuf: 'pouf', makyajpuf: 'pouf', sofa2: 'sofa', sofa3: 'sofa', berjer: 'armchair',
     sehpa: 'coffee', zigon: 'coffee', camasir: 'box', kurutma: 'box', kule: 'box', tvset: 'cabinet', kitaplik: 'shelf', table: 'table', chair: 'chair', konsol: 'cabinet' }).forEach(([k, s]) => { if (CATALOG[k]) CATALOG[k].shape = s; });
   function scaled(g, bw, bd, bh, w, d, h) { g.scale.set(w / bw, h / bh, d / bd); return g; }
   function makeShape(p, f) {
