@@ -987,16 +987,27 @@ window.addEventListener('error', e => {
     glass.position.set(0, y0 + 0.35, 0.005); g.add(glass);
     return g;
   }
-  // Bohemia boy aynası (kelebek.com, SKU 3200424247): 44 × 5 × 165,1 cm, Orma Beyaz body in industrial wood, stands on the floor
-  // against the wall. The product page shows no drawing, so the face follows the set's wardrobe mirror: an arch-topped mirror in a white frame.
+  // Bohemia boy aynası (kelebek.com, SKU 3200424247): 44 cm wide, 165,1 cm tall, Orma Beyaz, industrial wood (frame 5 cm deep).
+  // From the product photo: a free-standing mirror on a white base plate, the arch-topped white frame leaning back a little
+  // against a thin white post at the back. Base depth (about 30 cm) and the lean (about 6°) are read from the photo.
+  function archShape(w, h) {
+    const r = w / 2, sh = new THREE.Shape();
+    sh.moveTo(-r, 0); sh.lineTo(r, 0); sh.lineTo(r, h - r);
+    sh.absarc(0, h - r, r, 0, Math.PI, false); sh.lineTo(-r, 0);
+    return sh;
+  }
   function boyAyna() {
-    const g = new THREE.Group(), w = 0.44, h = 1.651, d = 0.05, side = 0.05, y0 = 0.1, y1 = h - 0.06, r = (w - 2 * side) / 2;
-    g.add(box(w, h, d, mat.white, 0, 0, 0));
-    const sh = new THREE.Shape();
-    sh.moveTo(-r, 0); sh.lineTo(r, 0); sh.lineTo(r, y1 - y0 - r);
-    sh.absarc(0, y1 - y0 - r, r, 0, Math.PI, false); sh.lineTo(-r, 0);
-    const glass = new THREE.Mesh(new THREE.ExtrudeGeometry(sh, { depth: 0.004, bevelEnabled: false, curveSegments: 32 }), mirrorMat);
-    glass.position.set(0, y0, d / 2); g.add(glass);
+    const g = new THREE.Group(), w = 0.44, baseH = 0.04, tilt = 6 * Math.PI / 180;
+    const ph = (1.651 - baseH) / Math.cos(tilt), fd = 0.04, rim = 0.03;
+    g.add(box(w, baseH, 0.3, mat.white, 0, 0, 0));                                     // base plate
+    g.add(box(0.025, 1.2, 0.025, mat.white, 0, baseH, -0.085));                         // support post at the back
+    const panel = new THREE.Group();
+    const frame = new THREE.Mesh(new THREE.ExtrudeGeometry(archShape(w, ph), { depth: fd, bevelEnabled: false, curveSegments: 32 }), mat.white);
+    frame.position.z = -fd; panel.add(shade(frame));
+    const glass = new THREE.Mesh(new THREE.ExtrudeGeometry(archShape(w - 2 * rim, ph - 2 * rim), { depth: 0.004, bevelEnabled: false, curveSegments: 32 }), mirrorMat);
+    glass.position.set(0, rim, 0); panel.add(glass);
+    panel.position.set(0, baseH, 0.1); panel.rotation.x = -tilt;                        // bottom at the front of the base, top leaning back
+    g.add(panel);
     return g;
   }
   // Bohemia wardrobe: flat white doors under an oak top, oak knobs, open base on 150 mm oak legs.
@@ -1415,7 +1426,7 @@ window.addEventListener('error', e => {
     dresuar: { name: 'Dresuar / makyaj masası', dims: '100 × 46 × 81 cm', w: 1.0, d: 0.46, make: dresuar },
     lamba: { name: 'RINGSTA/SKAFTET lambader (beyaz-pirinç)', dims: 'Ø 42 × 153 cm, taban Ø 29', w: 0.29, d: 0.29, price: 4199, make: floorLamp },
     ayna: { name: 'Ayna (duvara)', dims: '54 × 2,2 × 70 cm', w: 0.54, d: 0.022, wall: true, make: ayna },
-    boyayna: { name: 'Boy aynası', dims: '44 × 5 × 165,1 cm', w: 0.44, d: 0.05, make: boyAyna },
+    boyayna: { name: 'Boy aynası (ayaklı)', dims: '44 × 5 × 165,1 cm, taban ≈ 30 cm derin', w: 0.44, d: 0.3, make: boyAyna },
     makyajpuf: { name: 'Makyaj masası pufu', dims: 'Ø 45 × 46 cm', w: 0.45, d: 0.45, fabric: true, make: it => vanityPouf(it.color) },
     benchpuf: { name: 'Bench puf', dims: '110 × 45 × 45 cm', w: 1.1, d: 0.45, fabric: true, make: it => benchPuf(it.color) },
     sofa2: { name: "2'li koltuk (yataklı)", dims: '197 × 101 × 76,5 cm', w: 1.97, d: 1.01, fabric: true, make: it => sofa(1.97, it.color) },
@@ -1442,7 +1453,7 @@ window.addEventListener('error', e => {
   const KB = 'https://www.kelebek.com/';
   const PRICES = {
     karyola: [33077.75, KB + 'bohemia-basliksiz-karyola-160-cm-sonil-dokulu-ekru-3200424244'],
-    boyayna: [4160, KB + 'bohemia-boy-aynasi'],
+    boyayna: [4437.15, KB + 'bohemia-boy-aynasi'],                                  // sepette %15 indirimli fiyat
     komodin: [6389.56, KB + 'bohemia-komodin-3200424243'], sifonyer: [15188.97, KB + 'bohemia-genis-sifonyer-3200424249'],
     darsifonyer: [14888.98, KB + 'bohemia-dar-sifonyer-3200424248'],
     dolap4: [26688.18, KB + 'bohemia-4-kapakli-dolap-sonil-dokulu-ekru-3200424250'], dolap5: [36737.49, KB + 'bohemia-5-kapakli-dolap-sonil-dokulu-ekru-3200424251'],
