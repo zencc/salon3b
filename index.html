@@ -1258,6 +1258,8 @@ window.addEventListener('error', e => {
     g.add(box(1.425, 0.813, 0.004, mat.screen, cx, Hb + lift + 0.009, -0.022));
     return g;
   }
+  // The same 240 set mirrored: tall glass-door unit on the left, TV centred 90 cm from the right end.
+  function besta240Left() { const g = besta240(); g.scale.x = -1; return g; }
   // Bohemia zigon sehpa: three white nesting tables, 41 × 31 × 50, 54 × 35,5 × 54,7 and 67 × 40 × 59,5 cm, 18 mm tops,
   // rounded legs and a low rail on each side only, so the smaller ones slide in from the front. Back edges line up.
   function zigon() {
@@ -1369,6 +1371,7 @@ window.addEventListener('error', e => {
     sehpa: { name: 'Orta sehpa', dims: '120 × 60 × 40 cm', w: 1.2, d: 0.6, make: coffeeTable },
     tvset: { name: 'BESTÅ TV ünitesi kombinasyonu + Samsung 65R85H', dims: '300 × 42 × 138 cm', w: 3.0, d: 0.42, price: 30472, make: bestaTv },
     besta240: { name: 'BESTÅ TV ünitesi 240 + Samsung 65R85H', dims: '240 × 41,3 × 152,8 cm', w: 2.4, d: 0.413, make: besta240 },
+    besta240sol: { name: 'BESTÅ TV ünitesi 240, yüksek dolap solda + Samsung 65R85H', dims: '240 × 41,3 × 152,8 cm', w: 2.4, d: 0.413, make: besta240Left },
     tvduvar: { name: 'TV ünitesi 240 + 3 küp + Samsung 65R85H (duvarda)', dims: '240 × 42 × 155 cm', w: 2.4, d: 0.42, make: tvWall },
     kitaplik: { name: 'Kitaplık', dims: '120 × 38,6 × 171,3 cm', w: 1.2, d: 0.386, make: bookcase },
     table: { name: 'Açılır masa', dims: '160–200 × 90 × 76 cm', w: 1.6, d: 0.9, make: diningTable },
@@ -1393,7 +1396,7 @@ window.addEventListener('error', e => {
     sehpa: [3088.58, KB + 'bohemia-orta-sehpa-3200424246'], zigon: [11384.76, KB + 'bohemia-zigon-sehpa-3200424241']
   };
   Object.entries(PRICES).forEach(([k, [p, url]]) => { if (CATALOG[k]) { if (CATALOG[k].price == null) CATALOG[k].price = p; if (!CATALOG[k].url) CATALOG[k].url = url; } });
-  Object.keys(CATALOG).forEach(k => { CATALOG[k].brand = ['tvset', 'besta240', 'tvduvar', 'lamba'].includes(k) ? 'IKEA' : ['camasir', 'kurutma', 'kule'].includes(k) ? 'Arçelik' : 'Kelebek Bohemia'; });
+  Object.keys(CATALOG).forEach(k => { CATALOG[k].brand = ['tvset', 'besta240', 'besta240sol', 'tvduvar', 'lamba'].includes(k) ? 'IKEA' : ['camasir', 'kurutma', 'kule'].includes(k) ? 'Arçelik' : 'Kelebek Bohemia'; });
 
   // Brand products added by the household. Each is drawn with the shape of its type, sized to its own measurements (cm).
   const SHAPES = {
@@ -1408,7 +1411,7 @@ window.addEventListener('error', e => {
     shelf: { name: 'Kitaplık / raf', def: [120, 38, 170] },
     box: { name: 'Diğer', def: [100, 50, 50] }
   };
-  Object.entries({ karyola: 'bed', komodin: 'cabinet', sifonyer: 'cabinet', dolap4: 'cabinet', dolap5: 'cabinet', dolap6: 'cabinet', darsifonyer: 'cabinet', dresuar: 'table', ayna: 'box', lamba: 'box', tvduvar: 'cabinet', besta240: 'cabinet', benchpuf: 'pouf', makyajpuf: 'pouf', sofa2: 'sofa', sofa3: 'sofa', berjer: 'armchair',
+  Object.entries({ karyola: 'bed', komodin: 'cabinet', sifonyer: 'cabinet', dolap4: 'cabinet', dolap5: 'cabinet', dolap6: 'cabinet', darsifonyer: 'cabinet', dresuar: 'table', ayna: 'box', lamba: 'box', tvduvar: 'cabinet', besta240: 'cabinet', besta240sol: 'cabinet', benchpuf: 'pouf', makyajpuf: 'pouf', sofa2: 'sofa', sofa3: 'sofa', berjer: 'armchair',
     sehpa: 'coffee', zigon: 'coffee', camasir: 'box', kurutma: 'box', kule: 'box', tvset: 'cabinet', kitaplik: 'shelf', table: 'table', chair: 'chair', konsol: 'cabinet' }).forEach(([k, s]) => { if (CATALOG[k]) CATALOG[k].shape = s; });
   function scaled(g, bw, bd, bh, w, d, h) { g.scale.set(w / bw, h / bh, d / bd); return g; }
   function makeShape(p, f) {
